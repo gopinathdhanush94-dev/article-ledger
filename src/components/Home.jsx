@@ -1,8 +1,9 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { MONTH_ORDER, MONTH_LABEL, categoryIcon, uniqueSorted } from '../lib/helpers.js';
+import { MONTH_ORDER, MONTH_LABEL, categoryIcon, garmentTypeIcon, uniqueSorted } from '../lib/helpers.js';
 
 export default function Home({ products, garments, onGoToCatalog, onGoToGarments }) {
   const [catQuery, setCatQuery] = useState('');
+  const [styleQuery, setStyleQuery] = useState('');
   const [animate, setAnimate] = useState(false);
   useEffect(() => { const t = setTimeout(() => setAnimate(true), 30); return () => clearTimeout(t); }, [products, garments]);
 
@@ -34,12 +35,24 @@ export default function Home({ products, garments, onGoToCatalog, onGoToGarments
   }, [products]);
   const monthMax = monthCounts.length ? Math.max(...monthCounts.map(([, c]) => c)) : 1;
 
+  const garmentBrands = uniqueSorted(garments || [], 'brand');
+  const garmentStyles = uniqueSorted(garments || [], 'model_name');
+
   const garmentBrandCounts = useMemo(() => {
     const c = {};
     (garments || []).forEach(g => { c[g.brand] = (c[g.brand] || 0) + 1; });
     return Object.entries(c).sort((a, b) => b[1] - a[1]);
   }, [garments]);
   const garmentBrandMax = garmentBrandCounts.length ? garmentBrandCounts[0][1] : 1;
+
+  const garmentStyleCounts = useMemo(() => {
+    const c = {};
+    (garments || []).forEach(g => { c[g.model_name] = (c[g.model_name] || 0) + 1; });
+    return Object.entries(c).sort((a, b) => b[1] - a[1]);
+  }, [garments]);
+  const filteredStyles = styleQuery
+    ? garmentStyleCounts.filter(([name]) => (name || '').toLowerCase().includes(styleQuery.trim().toLowerCase()))
+    : garmentStyleCounts;
 
   return (
     <div className="home-wrap">
@@ -97,9 +110,46 @@ export default function Home({ products, garments, onGoToCatalog, onGoToGarments
         </div>
       </div>
 
+      <div style={{ margin: '36px 0 22px' }}>
+        <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 24, margin: 0 }}>Garments</h2>
+        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: 'var(--ink-soft)', marginTop: 4 }}>
+          Separate dataset from the article catalog above.
+        </div>
+      </div>
+
+      <div className="stat-cards">
+        <div className="stat-card"><div className="num">{(garments || []).length}</div><div className="lbl">Total Garments</div></div>
+        <div className="stat-card teal"><div className="num">{garmentStyles.length}</div><div className="lbl">Styles</div></div>
+        <div className="stat-card"><div className="num">{garmentBrands.length}</div><div className="lbl">Brands</div></div>
+      </div>
+
       <div className="panel">
-        <h3>Garments by Brand <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5, color: 'var(--ink-soft)', fontWeight: 500 }}>{garmentBrandCounts.length} brands · {(garments || []).length} SKUs</span></h3>
-        <div className="panel-hint">Separate from the article catalog above — click a brand to view its garments</div>
+        <h3>Garment Styles <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5, color: 'var(--ink-soft)', fontWeight: 500 }}>{garmentStyleCounts.length} styles</span></h3>
+        <div className="panel-hint">Search or click a style to view its garments</div>
+        <div className="cat-search-box">
+          <input placeholder="Search styles…" value={styleQuery} onChange={(e) => setStyleQuery(e.target.value)} />
+        </div>
+        {filteredStyles.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '30px 10px', fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: 'var(--ink-soft)' }}>
+            {garmentStyleCounts.length === 0 ? 'No garment data yet.' : 'No styles match your search.'}
+          </div>
+        ) : (
+          <div className="cat-tile-grid">
+            {filteredStyles.map(([name, count]) => (
+              <div key={name} className="cat-tile" onClick={() => onGoToGarments({ modelName: name })}>
+                <div className="icon">{garmentTypeIcon(name)}</div>
+                <div className="name" title={name}>{name || 'Unspecified'}</div>
+                <div className="count">{count}</div>
+                <div className="count-lbl">garments</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="panel">
+        <h3>Garments by Brand <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5, color: 'var(--ink-soft)', fontWeight: 500 }}>{garmentBrandCounts.length} brands</span></h3>
+        <div className="panel-hint">Click a brand to view its garments</div>
         {garmentBrandCounts.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '30px 10px', fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: 'var(--ink-soft)' }}>
             No garment data yet.

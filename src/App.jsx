@@ -172,9 +172,6 @@ function AppInner() {
     loadGarments();
   }
 
-  const categories = new Set(products.map(p => p.category)).size;
-  const brands = new Set(products.map(p => p.brand)).size;
-
   return (
     <>
       <header>
@@ -186,20 +183,6 @@ function AppInner() {
               <h1>Article Ledger</h1>
             </div>
           </button>
-          <div className="stat-chips">
-            <div className="stat-chip">
-              <div className="chip-icon">A</div>
-              <div><div className="chip-num">{products.length}</div><div className="chip-lbl">Articles</div></div>
-            </div>
-            <div className="stat-chip">
-              <div className="chip-icon">C</div>
-              <div><div className="chip-num">{categories}</div><div className="chip-lbl">Categories</div></div>
-            </div>
-            <div className="stat-chip teal">
-              <div className="chip-icon">B</div>
-              <div><div className="chip-num">{brands}</div><div className="chip-lbl">Brands</div></div>
-            </div>
-          </div>
           <div className="header-actions">
             {isAuthed ? (
               <>
@@ -214,8 +197,8 @@ function AppInner() {
         <nav className="tabs">
           <button className={view === 'home' ? 'active' : ''} onClick={goHome}>🏠 Home</button>
           <button className={view === 'catalog' ? 'active' : ''} onClick={() => { setCatalogFilters(null); navigate('catalog'); }}>General</button>
-          <button className={(view === 'add-product' || view === 'add-garment') ? 'active' : ''} onClick={openAddChoice}>+ Add Product</button>
           <button className={view === 'garments' ? 'active' : ''} onClick={() => { setGarmentFilters(null); navigate('garments'); }}>Garments</button>
+          <button className={(view === 'add-product' || view === 'add-garment') ? 'active' : ''} onClick={openAddChoice}>+ Add Product</button>
         </nav>
       </header>
 

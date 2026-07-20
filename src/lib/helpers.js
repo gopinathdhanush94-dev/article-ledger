@@ -52,6 +52,25 @@ export function uniqueSorted(rows, key) {
   return [...new Set(rows.map(r => r[key]).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b)));
 }
 
+const GARMENT_TYPE_ICON_RULES = [
+  [/jacket|puffer|coat/, '🧥'],
+  [/track\s*pant|jogger|trouser|pant/, '👖'],
+  [/short/, '🩳'],
+  [/sweat\s*shirt|hoodie/, '👕'],
+  [/t[-\s]?shirt|tee|top/, '👕'],
+  [/dress|frock/, '👗'],
+  [/skirt/, '👗'],
+  [/velour|thermal|inner/, '🧦'],
+  [/night\s*wear|nighty|pajama|pyjama/, '🌙'],
+  [/set|combo/, '🧺'],
+  [/fleece|sweater|pullover/, '🧶'],
+];
+export function garmentTypeIcon(name) {
+  const n = (name || '').toLowerCase();
+  for (const [re, icon] of GARMENT_TYPE_ICON_RULES) if (re.test(n)) return icon;
+  return '👕';
+}
+
 export function monthOptions(rows) {
   const extra = uniqueSorted(rows, 'month').filter(m => !MONTH_ORDER.includes(m));
   return [...new Set([...MONTH_ORDER, ...extra])];
