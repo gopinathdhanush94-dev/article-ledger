@@ -1,10 +1,14 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+import * as XLSX from 'xlsx';
 import { fmtINR, uniqueSorted } from '../lib/helpers.js';
+
+const SHEET_ORDER = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUNE'];
 
 function groupGarments(rows) {
   const map = new Map();
   for (const r of rows) {
-    const key = [r.source_file, r.excel_name, r.color, r.customer_model].join('|');
+    // grouping includes the sheet/month so each monthly listing stays its own card
+    const key = [r.source_file, r.sheet, r.excel_name, r.color, r.customer_model].join('|');
     if (!map.has(key)) {
       map.set(key, {
         key,
@@ -18,6 +22,7 @@ function groupGarments(rows) {
         origin: r.origin,
         moi: r.moi,
         mfd: r.mfd,
+        sheet: r.sheet,
         master_ean: r.master_ean,
         master_article: r.master_article,
         image_url: r.image_url,
@@ -34,14 +39,26 @@ function groupGarments(rows) {
   return [...map.values()];
 }
 
-export default function Garments({ garments }) {
+export default function Garments({ garments, initialFilters, onEdit, onDelete }) {
   const [q, setQ] = useState('');
   const [brand, setBrand] = useState('');
   const [modelName, setModelName] = useState('');
+  const [month, setMonth] = useState('');
   const [selected, setSelected] = useState(null);
+
+  useEffect(() => {
+    if (initialFilters) {
+      setBrand(initialFilters.brand || '');
+      setModelName(initialFilters.modelName || '');
+      setMonth(initialFilters.month || '');
+      setQ('');
+    }
+  }, [initialFilters]);
 
   const brands = uniqueSorted(garments, 'brand');
   const modelNames = uniqueSorted(garments, 'model_name');
+  const months = [...new Set([...SHEET_ORDER, ...uniqueSorted(garments, 'sheet')])]
+    .filter(m => garments.some(g => g.sheet === m));
 
   const grouped = useMemo(() => groupGarments(garments), [garments]);
 
@@ -50,6 +67,7 @@ export default function Garments({ garments }) {
     return grouped.filter(g => {
       if (brand && g.brand !== brand) return false;
       if (modelName && g.model_name !== modelName) return false;
+      if (month && g.sheet !== month) return false;
       if (query) {
         const hay = [
           g.excel_name, g.model_name, g.brand, g.color, g.customer_model, g.model1,
@@ -59,7 +77,31 @@ export default function Garments({ garments }) {
       }
       return true;
     });
-  }, [grouped, q, brand, modelName]);
+  }, [grouped, q, brand, modelName, month]);
+
+  function resetFilters() { setQ(''); setBrand(''); setModelName(''); setMonth(''); }
+
+  function downloadXlsx() {
+    const headers = ['Source', 'Month', 'Style Name', 'Garment Type', 'Brand', 'Color', 'Customer Model', 'Internal Model',
+      'Description', 'Origin', 'MOI', 'MFD', 'Master EAN', 'Master Article',
+      'Size', 'Set Qty', 'EAN', 'Article', 'MRP', 'RRP'];
+    const aoa = [headers];
+    filtered.forEach(g => {
+      g.sizes.forEach(s => {
+        aoa.push([
+          g.source_file, g.sheet, g.excel_name, g.model_name, g.brand, g.color, g.customer_model, g.model1,
+          g.description, g.origin, g.moi, g.mfd, g.master_ean, g.master_article,
+          s.size, s.ratio ?? '', s.ean, s.article, s.mrp ?? '', s.rrp ?? '',
+        ]);
+      });
+    });
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols'] = headers.map(() => ({ wch: 14 }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Garments');
+    const stamp = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `garments-filtered-${stamp}.xlsx`);
+  }
 
   return (
     <>
@@ -80,9 +122,12 @@ export default function Garments({ garments }) {
             <option value="">All garment types</option>
             {modelNames.map(m => <option key={m} value={m}>{m}</option>)}
           </select>
-          <button className="btn btn-rust" onClick={() => { setQ(''); setBrand(''); setModelName(''); }}>
-            Reset filters
-          </button>
+          <select value={month} onChange={(e) => setMonth(e.target.value)}>
+            <option value="">All months</option>
+            {months.map(m => <option key={m} value={m}>{m}</option>)}
+          </select>
+          <button className="btn btn-rust" onClick={resetFilters}>Reset filters</button>
+          <button className="btn btn-teal" onClick={downloadXlsx}>⬇ Download filtered (.xlsx)</button>
         </div>
         <div className="result-count">
           <b>{filtered.length}</b> garment styles found <span style={{ opacity: 0.6 }}>({garments.length} total size/color SKUs)</span>
@@ -95,7 +140,7 @@ export default function Garments({ garments }) {
             <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 20, color: 'var(--ink)', fontWeight: 600, marginBottom: 8 }}>
               No matching garments
             </div>
-            Try a different brand, color, or search term.
+            Try a different brand, color, month, or search term.
           </div>
         ) : (
           <div className="grid">
@@ -103,7 +148,8 @@ export default function Garments({ garments }) {
               const sizeList = g.sizes.map(s => s.size).filter(Boolean).join(', ');
               return (
                 <article key={g.key} className="card" onClick={() => setSelected(g)}>
-                  <div className="card-img">
+                  {g.sizes.some(s => s.custom) && <div className="custom-flag">Added</div>}
+                  <div className="card-img no-blend">
                     {g.image_url ? <img src={g.image_url} alt={g.excel_name} loading="lazy" /> : <div className="no-img">NO IMAGE<br />ON FILE</div>}
                   </div>
                   <div className="card-body">
@@ -117,7 +163,7 @@ export default function Garments({ garments }) {
                       <span className="sp">{fmtINR(g.rrp)}</span>
                       {g.mrp ? <span className="mrp">{fmtINR(g.mrp)}</span> : null}
                     </div>
-                    <div className="meta-line"><span>{g.sizes.length} size{g.sizes.length === 1 ? '' : 's'}</span><span>{g.source_file}</span></div>
+                    <div className="meta-line"><span>{g.sizes.length} size{g.sizes.length === 1 ? '' : 's'}</span><span>{g.sheet || g.source_file}</span></div>
                   </div>
                 </article>
               );
@@ -126,18 +172,25 @@ export default function Garments({ garments }) {
         )}
       </main>
 
-      {selected && <GarmentModal garment={selected} onClose={() => setSelected(null)} />}
+      {selected && (
+        <GarmentModal
+          garment={selected}
+          onClose={() => setSelected(null)}
+          onEdit={() => { const g = selected; setSelected(null); onEdit(g); }}
+          onDelete={() => { const g = selected; setSelected(null); onDelete(g); }}
+        />
+      )}
     </>
   );
 }
 
-function GarmentModal({ garment: g, onClose }) {
+function GarmentModal({ garment: g, onClose, onEdit, onDelete }) {
   return (
     <div className="overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="modal" onMouseDown={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose}>✕</button>
         <div className="modal-grid">
-          <div className="modal-img">
+          <div className="modal-img no-blend">
             {g.image_url ? <img src={g.image_url} alt={g.excel_name} /> : <div className="no-img">NO IMAGE ON FILE</div>}
           </div>
           <div className="modal-body">
@@ -153,14 +206,14 @@ function GarmentModal({ garment: g, onClose }) {
                 <tr><td>MOI / MFD</td><td>{[g.moi, g.mfd].filter(Boolean).join(' / ') || '—'}</td></tr>
                 <tr><td>Master EAN</td><td>{g.master_ean || '—'}</td></tr>
                 <tr><td>Master Article</td><td>{g.master_article || '—'}</td></tr>
-                <tr><td>Source</td><td>{g.source_file || '—'}</td></tr>
+                <tr><td>Month / Source</td><td>{[g.sheet, g.source_file].filter(Boolean).join(' · ') || '—'}</td></tr>
               </tbody>
             </table>
 
             <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, fontSize: 14, marginBottom: 8 }}>
               Size run ({g.sizes.length})
             </div>
-            <div style={{ maxHeight: 260, overflowY: 'auto', border: '1px solid var(--rule)', borderRadius: 6 }}>
+            <div style={{ maxHeight: 260, overflowY: 'auto', border: '1px solid var(--rule)', borderRadius: 6, marginBottom: 18 }}>
               <table className="detail-table" style={{ marginBottom: 0 }}>
                 <thead>
                   <tr style={{ borderBottom: '1.5px solid var(--ink)' }}>
@@ -185,6 +238,10 @@ function GarmentModal({ garment: g, onClose }) {
                   ))}
                 </tbody>
               </table>
+            </div>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <button className="btn" onClick={onEdit}>✎ Edit</button>
+              <button className="btn btn-danger" onClick={onDelete}>🗑 Delete</button>
             </div>
           </div>
         </div>

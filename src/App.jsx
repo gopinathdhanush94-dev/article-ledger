@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from './supabaseClient.js';
 import { useAuth } from './lib/useAuth.js';
 import { DialogProvider, useDialogs } from './components/Dialogs.jsx';
@@ -7,24 +7,59 @@ import Home from './components/Home.jsx';
 import Catalog from './components/Catalog.jsx';
 import AddProductForm from './components/AddProductForm.jsx';
 import Garments from './components/Garments.jsx';
+import GarmentForm from './components/GarmentForm.jsx';
+
+const BrandIconSVG = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="3" y="2" width="14" height="20" rx="2" stroke="#E9B98C" strokeWidth="1.6" />
+    <path d="M7 7H13" stroke="#F4F1E6" strokeWidth="1.6" strokeLinecap="round" />
+    <path d="M7 11H13" stroke="#F4F1E6" strokeWidth="1.6" strokeLinecap="round" />
+    <path d="M7 15H10.5" stroke="#F4F1E6" strokeWidth="1.6" strokeLinecap="round" />
+    <circle cx="18" cy="17" r="4" fill="#C1622B" stroke="#17233B" strokeWidth="1" />
+    <path d="M16.6 17L17.6 18L19.6 15.6" stroke="#F4F1E6" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
 
 function AppInner() {
-  const { isAuthed, loading: authLoading, signIn, signOut } = useAuth();
+  const { isAuthed, signIn, signOut } = useAuth();
   const dialogs = useDialogs();
 
-  const [view, setView] = useState('home');
+  const [view, setViewState] = useState('home');
   const [products, setProducts] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState(null);
   const [catalogFilters, setCatalogFilters] = useState(null);
   const [editingProduct, setEditingProduct] = useState(null);
   const [showLogin, setShowLogin] = useState(false);
-  const [pendingAction, setPendingAction] = useState(null); // function to run after successful login
+  const [pendingAction, setPendingAction] = useState(null);
 
   const [garments, setGarments] = useState([]);
   const [garmentsLoading, setGarmentsLoading] = useState(true);
   const [garmentsError, setGarmentsError] = useState(null);
+  const [garmentFilters, setGarmentFilters] = useState(null);
+  const [editingGarmentGroup, setEditingGarmentGroup] = useState(null);
 
+  // ---------------- browser back/forward support ----------------
+  const isPopRef = useRef(false);
+  useEffect(() => {
+    window.history.replaceState({ view: 'home' }, '', '#home');
+    function onPop(e) {
+      isPopRef.current = true;
+      setViewState(e.state?.view || 'home');
+    }
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
+  function navigate(nextView) {
+    if (!isPopRef.current) {
+      window.history.pushState({ view: nextView }, '', '#' + nextView);
+    }
+    isPopRef.current = false;
+    setViewState(nextView);
+  }
+
+  // ---------------- data loading ----------------
   const loadProducts = useCallback(async () => {
     setDataLoading(true);
     const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: true });
@@ -58,17 +93,34 @@ function AppInner() {
     return err;
   }
 
+  // ---------------- navigation actions ----------------
+  function goHome() { navigate('home'); }
+
   function goToCatalog(filters) {
     setCatalogFilters({ ...filters, _t: Date.now() });
-    setView('catalog');
+    navigate('catalog');
   }
 
-  function openAddForm() {
-    requireAuth(() => { setEditingProduct(null); setView('add'); });
+  function goToGarments(filters) {
+    setGarmentFilters({ ...filters, _t: Date.now() });
+    navigate('garments');
+  }
+
+  function openAddChoice() {
+    requireAuth(() => {
+      dialogs.choiceDialog({
+        title: 'What would you like to add?',
+        message: 'Choose which catalog this new entry belongs to.',
+        options: [
+          { label: 'General Article', icon: '📦', onClick: () => { setEditingProduct(null); navigate('add-product'); } },
+          { label: 'Garment', icon: '👕', onClick: () => { setEditingGarmentGroup(null); navigate('add-garment'); } },
+        ],
+      });
+    });
   }
 
   function openEditForm(product) {
-    requireAuth(() => { setEditingProduct(product); setView('add'); });
+    requireAuth(() => { setEditingProduct(product); navigate('add-product'); });
   }
 
   function deleteProduct(product) {
@@ -80,20 +132,44 @@ function AppInner() {
         danger: true,
         onConfirm: async () => {
           const { error } = await supabase.from('products').delete().eq('id', product.id);
-          if (error) {
-            dialogs.alertDialog({ title: 'Could not delete', message: error.message });
-          } else {
-            loadProducts();
-          }
+          if (error) dialogs.alertDialog({ title: 'Could not delete', message: error.message });
+          else loadProducts();
         },
       });
     });
   }
 
-  function handleSaved() {
+  function handleProductSaved() {
     setEditingProduct(null);
-    setView('catalog');
+    navigate('catalog');
     loadProducts();
+  }
+
+  function openEditGarment(group) {
+    requireAuth(() => { setEditingGarmentGroup(group); navigate('add-garment'); });
+  }
+
+  function deleteGarment(group) {
+    requireAuth(() => {
+      dialogs.confirmDialog({
+        title: 'Delete this garment style?',
+        message: `"${group.excel_name || group.customer_model}" (${group.sizes.length} size${group.sizes.length === 1 ? '' : 's'}) will be permanently removed.`,
+        confirmLabel: 'Delete',
+        danger: true,
+        onConfirm: async () => {
+          const ids = group.sizes.map(s => s.id);
+          const { error } = await supabase.from('garments').delete().in('id', ids);
+          if (error) dialogs.alertDialog({ title: 'Could not delete', message: error.message });
+          else loadGarments();
+        },
+      });
+    });
+  }
+
+  function handleGarmentSaved() {
+    setEditingGarmentGroup(null);
+    navigate('garments');
+    loadGarments();
   }
 
   const categories = new Set(products.map(p => p.category)).size;
@@ -103,17 +179,26 @@ function AppInner() {
     <>
       <header>
         <div className="header-inner">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--paper)', border: '2px dashed rgba(244,241,230,0.5)' }} />
+          <button className="brand-mark" onClick={goHome} title="Go to Home">
+            <div className="brand-icon"><BrandIconSVG /></div>
             <div>
-              <p className="eyebrow">Purchase Register</p>
+              <p className="eyebrow">G-Records</p>
               <h1>Article Ledger</h1>
             </div>
-          </div>
-          <div className="stats-strip">
-            <span><b>{products.length}</b> articles</span>
-            <span><b>{categories}</b> categories</span>
-            <span><b>{brands}</b> brands</span>
+          </button>
+          <div className="stat-chips">
+            <div className="stat-chip">
+              <div className="chip-icon">A</div>
+              <div><div className="chip-num">{products.length}</div><div className="chip-lbl">Articles</div></div>
+            </div>
+            <div className="stat-chip">
+              <div className="chip-icon">C</div>
+              <div><div className="chip-num">{categories}</div><div className="chip-lbl">Categories</div></div>
+            </div>
+            <div className="stat-chip teal">
+              <div className="chip-icon">B</div>
+              <div><div className="chip-num">{brands}</div><div className="chip-lbl">Brands</div></div>
+            </div>
           </div>
           <div className="header-actions">
             {isAuthed ? (
@@ -127,10 +212,10 @@ function AppInner() {
           </div>
         </div>
         <nav className="tabs">
-          <button className={view === 'home' ? 'active' : ''} onClick={() => setView('home')}>Home</button>
-          <button className={view === 'catalog' ? 'active' : ''} onClick={() => { setCatalogFilters(null); setView('catalog'); }}>Catalog</button>
-          <button className={view === 'add' ? 'active' : ''} onClick={openAddForm}>Add Product</button>
-          <button className={view === 'garments' ? 'active' : ''} onClick={() => setView('garments')}>Garments</button>
+          <button className={view === 'home' ? 'active' : ''} onClick={goHome}>🏠 Home</button>
+          <button className={view === 'catalog' ? 'active' : ''} onClick={() => { setCatalogFilters(null); navigate('catalog'); }}>General</button>
+          <button className={(view === 'add-product' || view === 'add-garment') ? 'active' : ''} onClick={openAddChoice}>+ Add Product</button>
+          <button className={view === 'garments' ? 'active' : ''} onClick={() => { setGarmentFilters(null); navigate('garments'); }}>Garments</button>
         </nav>
       </header>
 
@@ -150,7 +235,9 @@ function AppInner() {
 
       {!dataLoading && !dataError && (
         <>
-          {view === 'home' && <Home products={products} onGoToCatalog={goToCatalog} />}
+          {view === 'home' && (
+            <Home products={products} garments={garments} onGoToCatalog={goToCatalog} onGoToGarments={goToGarments} />
+          )}
           {view === 'catalog' && (
             <Catalog
               products={products}
@@ -159,12 +246,12 @@ function AppInner() {
               onDelete={deleteProduct}
             />
           )}
-          {view === 'add' && (
+          {view === 'add-product' && (
             <AddProductForm
               products={products}
               editingProduct={editingProduct}
-              onSaved={handleSaved}
-              onCancel={() => setView('catalog')}
+              onSaved={handleProductSaved}
+              onCancel={() => navigate('catalog')}
             />
           )}
           {view === 'garments' && (
@@ -181,8 +268,18 @@ function AppInner() {
                   Check that supabase/garments_schema.sql has been run and the migration completed.
                 </div>
               )}
-              {!garmentsLoading && !garmentsError && <Garments garments={garments} />}
+              {!garmentsLoading && !garmentsError && (
+                <Garments garments={garments} initialFilters={garmentFilters} onEdit={openEditGarment} onDelete={deleteGarment} />
+              )}
             </>
+          )}
+          {view === 'add-garment' && (
+            <GarmentForm
+              garments={garments}
+              editingGroup={editingGarmentGroup}
+              onSaved={handleGarmentSaved}
+              onCancel={() => navigate('garments')}
+            />
           )}
         </>
       )}

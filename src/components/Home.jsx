@@ -1,10 +1,10 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { MONTH_ORDER, MONTH_LABEL, categoryIcon, uniqueSorted } from '../lib/helpers.js';
 
-export default function Home({ products, onGoToCatalog }) {
+export default function Home({ products, garments, onGoToCatalog, onGoToGarments }) {
   const [catQuery, setCatQuery] = useState('');
   const [animate, setAnimate] = useState(false);
-  useEffect(() => { const t = setTimeout(() => setAnimate(true), 30); return () => clearTimeout(t); }, [products]);
+  useEffect(() => { const t = setTimeout(() => setAnimate(true), 30); return () => clearTimeout(t); }, [products, garments]);
 
   const categories = uniqueSorted(products, 'category');
   const brands = uniqueSorted(products, 'brand');
@@ -33,6 +33,13 @@ export default function Home({ products, onGoToCatalog }) {
       .map(m => [m, c[m]]);
   }, [products]);
   const monthMax = monthCounts.length ? Math.max(...monthCounts.map(([, c]) => c)) : 1;
+
+  const garmentBrandCounts = useMemo(() => {
+    const c = {};
+    (garments || []).forEach(g => { c[g.brand] = (c[g.brand] || 0) + 1; });
+    return Object.entries(c).sort((a, b) => b[1] - a[1]);
+  }, [garments]);
+  const garmentBrandMax = garmentBrandCounts.length ? garmentBrandCounts[0][1] : 1;
 
   return (
     <div className="home-wrap">
@@ -88,6 +95,29 @@ export default function Home({ products, onGoToCatalog }) {
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="panel">
+        <h3>Garments by Brand <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5, color: 'var(--ink-soft)', fontWeight: 500 }}>{garmentBrandCounts.length} brands · {(garments || []).length} SKUs</span></h3>
+        <div className="panel-hint">Separate from the article catalog above — click a brand to view its garments</div>
+        {garmentBrandCounts.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '30px 10px', fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: 'var(--ink-soft)' }}>
+            No garment data yet.
+          </div>
+        ) : (
+          <div style={{ maxHeight: 420, overflowY: 'auto' }}>
+            {garmentBrandCounts.map(([b, count], i) => (
+              <div key={b} className="bar-row" onClick={() => onGoToGarments({ brand: b })}>
+                <div className="bar-rank">{i + 1}</div>
+                <div className="bar-label" title={b}>{b}</div>
+                <div className="bar-track">
+                  <div className="bar-fill teal" style={{ width: animate ? `${(count / garmentBrandMax * 100).toFixed(0)}%` : '0%' }} />
+                </div>
+                <div className="bar-num">{count}</div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
