@@ -6,6 +6,7 @@ import LoginModal from './components/LoginModal.jsx';
 import Home from './components/Home.jsx';
 import Catalog from './components/Catalog.jsx';
 import AddProductForm from './components/AddProductForm.jsx';
+import Garments from './components/Garments.jsx';
 
 function AppInner() {
   const { isAuthed, loading: authLoading, signIn, signOut } = useAuth();
@@ -20,6 +21,10 @@ function AppInner() {
   const [showLogin, setShowLogin] = useState(false);
   const [pendingAction, setPendingAction] = useState(null); // function to run after successful login
 
+  const [garments, setGarments] = useState([]);
+  const [garmentsLoading, setGarmentsLoading] = useState(true);
+  const [garmentsError, setGarmentsError] = useState(null);
+
   const loadProducts = useCallback(async () => {
     setDataLoading(true);
     const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: true });
@@ -28,7 +33,15 @@ function AppInner() {
     setDataLoading(false);
   }, []);
 
-  useEffect(() => { loadProducts(); }, [loadProducts]);
+  const loadGarments = useCallback(async () => {
+    setGarmentsLoading(true);
+    const { data, error } = await supabase.from('garments').select('*').order('created_at', { ascending: true });
+    if (error) setGarmentsError(error.message);
+    else { setGarments(data || []); setGarmentsError(null); }
+    setGarmentsLoading(false);
+  }, []);
+
+  useEffect(() => { loadProducts(); loadGarments(); }, [loadProducts, loadGarments]);
 
   function requireAuth(action) {
     if (isAuthed) { action(); return; }
@@ -117,6 +130,7 @@ function AppInner() {
           <button className={view === 'home' ? 'active' : ''} onClick={() => setView('home')}>Home</button>
           <button className={view === 'catalog' ? 'active' : ''} onClick={() => { setCatalogFilters(null); setView('catalog'); }}>Catalog</button>
           <button className={view === 'add' ? 'active' : ''} onClick={openAddForm}>Add Product</button>
+          <button className={view === 'garments' ? 'active' : ''} onClick={() => setView('garments')}>Garments</button>
         </nav>
       </header>
 
@@ -152,6 +166,23 @@ function AppInner() {
               onSaved={handleSaved}
               onCancel={() => setView('catalog')}
             />
+          )}
+          {view === 'garments' && (
+            <>
+              {garmentsLoading && (
+                <div style={{ padding: 60, textAlign: 'center', fontFamily: "'JetBrains Mono',monospace", color: 'var(--ink-soft)' }}>
+                  Loading garments…
+                </div>
+              )}
+              {garmentsError && (
+                <div style={{ padding: 40, textAlign: 'center', fontFamily: "'JetBrains Mono',monospace", color: 'var(--danger)' }}>
+                  Could not load garments: {garmentsError}
+                  <br /><br />
+                  Check that supabase/garments_schema.sql has been run and the migration completed.
+                </div>
+              )}
+              {!garmentsLoading && !garmentsError && <Garments garments={garments} />}
+            </>
           )}
         </>
       )}

@@ -100,3 +100,19 @@ Opens at `http://localhost:5173`.
 ## Adding more admin users later
 
 Supabase → Authentication → Users → Add user. That's it — no code changes needed.
+
+## Garments page (separate dataset)
+
+The **Garments** tab is a second, independent catalog for garment-specific data (brand, model, size, color, set-packing ratio) — it doesn't touch the products table at all.
+
+To set it up:
+
+1. In Supabase SQL Editor, run `supabase/garments_schema.sql` (this must run *after* `supabase/schema.sql`, since it reuses a function defined there).
+2. From your project folder, with `.env` already filled in:
+   ```
+   npm run migrate-garments
+   ```
+   This loads all 2,065 size/color rows and uploads the 470 product images to a separate `garment-images` storage bucket. Safe to re-run.
+3. Redeploy (or just refresh, if you're already deployed) — the Garments tab will now show real data.
+
+Each card in the Garments tab represents one style + color combination; click it to see the full size run (every size, its set-packing quantity, EAN, and article number) in one table.
