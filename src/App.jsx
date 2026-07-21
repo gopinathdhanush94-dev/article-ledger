@@ -60,19 +60,48 @@ function AppInner() {
   }
 
   // ---------------- data loading ----------------
+  // Supabase/PostgREST caps a single select() response at 1000 rows by default,
+  // regardless of how many rows actually exist — so anything past the first
+  // 1000 silently gets cut off unless we page through with .range().
+  async function fetchAllRows(table) {
+    const pageSize = 1000;
+    let all = [];
+    let from = 0;
+    while (true) {
+      const { data, error } = await supabase
+        .from(table)
+        .select('*')
+        .order('created_at', { ascending: true })
+        .range(from, from + pageSize - 1);
+      if (error) throw error;
+      all = all.concat(data || []);
+      if (!data || data.length < pageSize) break;
+      from += pageSize;
+    }
+    return all;
+  }
+
   const loadProducts = useCallback(async () => {
     setDataLoading(true);
-    const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: true });
-    if (error) setDataError(error.message);
-    else { setProducts(data || []); setDataError(null); }
+    try {
+      const data = await fetchAllRows('products');
+      setProducts(data);
+      setDataError(null);
+    } catch (err) {
+      setDataError(err.message);
+    }
     setDataLoading(false);
   }, []);
 
   const loadGarments = useCallback(async () => {
     setGarmentsLoading(true);
-    const { data, error } = await supabase.from('garments').select('*').order('created_at', { ascending: true });
-    if (error) setGarmentsError(error.message);
-    else { setGarments(data || []); setGarmentsError(null); }
+    try {
+      const data = await fetchAllRows('garments');
+      setGarments(data);
+      setGarmentsError(null);
+    } catch (err) {
+      setGarmentsError(err.message);
+    }
     setGarmentsLoading(false);
   }, []);
 

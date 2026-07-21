@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "migrate": "node scripts/migrate.mjs",
     "migrate-garments": "node scripts/migrate_garments.mjs",
-    "reimport": "node scripts/reimport.mjs"
+    "reimport": "node scripts/reimport.mjs",
+    "reimport-garments": "node scripts/reimport_garments.mjs",
+    "undo-original-garments": "node scripts/undo_original_garments.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
