@@ -8,6 +8,7 @@ import Catalog from './components/Catalog.jsx';
 import AddProductForm from './components/AddProductForm.jsx';
 import Garments from './components/Garments.jsx';
 import GarmentForm from './components/GarmentForm.jsx';
+import ImportExcel from './components/ImportExcel.jsx';
 
 const BrandIconSVG = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -143,6 +144,7 @@ function AppInner() {
         options: [
           { label: 'General Article', icon: '📦', onClick: () => { setEditingProduct(null); navigate('add-product'); } },
           { label: 'Garment', icon: '👕', onClick: () => { setEditingGarmentGroup(null); navigate('add-garment'); } },
+          { label: 'Import from Excel', icon: '📄', onClick: () => navigate('import-excel') },
         ],
       });
     });
@@ -227,7 +229,7 @@ function AppInner() {
           <button className={view === 'home' ? 'active' : ''} onClick={goHome}>🏠 Home</button>
           <button className={view === 'catalog' ? 'active' : ''} onClick={() => { setCatalogFilters(null); navigate('catalog'); }}>General</button>
           <button className={view === 'garments' ? 'active' : ''} onClick={() => { setGarmentFilters(null); navigate('garments'); }}>Garments</button>
-          <button className={(view === 'add-product' || view === 'add-garment') ? 'active' : ''} onClick={openAddChoice}>+ Add Product</button>
+          <button className={(view === 'add-product' || view === 'add-garment' || view === 'import-excel') ? 'active' : ''} onClick={openAddChoice}>+ Add Product</button>
         </nav>
       </header>
 
@@ -291,6 +293,12 @@ function AppInner() {
               editingGroup={editingGarmentGroup}
               onSaved={handleGarmentSaved}
               onCancel={() => navigate('garments')}
+            />
+          )}
+          {view === 'import-excel' && (
+            <ImportExcel
+              onDone={() => { loadProducts(); loadGarments(); }}
+              onCancel={() => navigate('home')}
             />
           )}
         </>
