@@ -49,9 +49,25 @@ const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 const fileBuffer = fs.readFileSync(csvPath);
 const workbook = XLSX.read(fileBuffer, { type: 'buffer', raw: true });
 const sheet = workbook.Sheets[workbook.SheetNames[0]];
-const rows = XLSX.utils.sheet_to_json(sheet, { defval: null });
+const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: null });
+
+// Normalize header keys: strip a leading BOM character (a common artifact of
+// CSV round-trips through Excel), trim whitespace, and lowercase — so a
+// header like "ID", " Id ", or "\uFEFFid" all still match our "id" lookup below.
+function normalizeKeys(row) {
+  const out = {};
+  for (const [k, v] of Object.entries(row)) {
+    const cleanKey = String(k).replace(/^\uFEFF/, '').trim().toLowerCase();
+    out[cleanKey] = v;
+  }
+  return out;
+}
+const rows = rawRows.map(normalizeKeys);
 
 console.log(`Loaded ${rows.length} rows from ${csvPath}`);
+if (rows.length > 0) {
+  console.log(`Detected columns: ${Object.keys(rows[0]).join(', ')}`);
+}
 
 const TEXT_FIELDS = [
   'source_file', 'sheet', 'excel_name', 'model_name', 'model1', 'brand', 'description', 'color',

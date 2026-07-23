@@ -13,7 +13,9 @@
     "undo-2024-2025": "node scripts/undo_migrate_2024_2025.mjs",
     "undo-original-garments": "node scripts/undo_original_garments.mjs",
     "reimport": "node scripts/reimport.mjs",
-    "reimport-garments": "node scripts/reimport_garments.mjs"
+    "reimport-garments": "node scripts/reimport_garments.mjs",
+    "wipe-and-reload-products": "node scripts/wipe_and_reload_products.mjs",
+    "restore-products-backup": "node scripts/restore_products_backup.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

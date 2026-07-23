@@ -58,7 +58,8 @@ export default function Garments({ garments, initialFilters, onEdit, onDelete })
   const brands = uniqueSorted(garments, 'brand');
   const modelNames = uniqueSorted(garments, 'model_name');
   const months = [...new Set([...SHEET_ORDER, ...uniqueSorted(garments, 'sheet')])]
-    .filter(m => garments.some(g => g.sheet === m));
+    .filter(m => garments.some(g => g.sheet === m))
+    .reverse();
 
   const grouped = useMemo(() => groupGarments(garments), [garments]);
 

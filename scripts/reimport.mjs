@@ -44,13 +44,59 @@ if (!fs.existsSync(csvPath)) {
 
 const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 
+// This script accepts CSVs from either export source:
+//  (a) Supabase Table Editor's raw export — headers already match DB columns
+//      exactly (e.g. "article_no", "sku_l").
+//  (b) The app's own "Download filtered (.xlsx)" button on the Catalog page —
+//      which uses friendlier display headers (e.g. "Article No", "SKU L").
+// This table translates (b)-style headers to their DB column name so both
+// work interchangeably. "discount %" isn't stored (it's calculated from
+// mrp/sp) so it's intentionally left out — that column is simply ignored.
+const HEADER_ALIASES = {
+  'article no': 'article_no',
+  'marketed by': 'marketed_by',
+  'master qty': 'master_qty',
+  'inner qty': 'inner_qty',
+  'sku l': 'sku_l', 'sku w': 'sku_w', 'sku h': 'sku_h',
+  'sku dim unit': 'sku_dim_unit',
+  'sku net wt': 'sku_nw', 'sku gross wt': 'sku_gw',
+  'sku weight unit': 'sku_wt_unit',
+  'master l': 'master_l', 'master w': 'master_w', 'master h': 'master_h',
+  'master dim unit': 'master_dim_unit',
+  'master net wt': 'master_nw', 'master gross wt': 'master_gw',
+  'master weight unit': 'master_wt_unit',
+  'inner l': 'inner_l', 'inner w': 'inner_w', 'inner h': 'inner_h',
+  'inner dim unit': 'inner_dim_unit',
+  'inner net wt': 'inner_nw', 'inner gross wt': 'inner_gw',
+  'inner weight unit': 'inner_wt_unit',
+};
+
 // ---- read the CSV ----
-const fileBuffer = fs.readFileSync(csvPath);
-const workbook = XLSX.read(fileBuffer, { type: 'buffer', raw: true });
+// Read as UTF-8 text (not raw bytes) so a leading BOM decodes to a single
+// proper U+FEFF character instead of three garbled bytes, then strip it.
+let fileText = fs.readFileSync(csvPath, 'utf8');
+fileText = fileText.replace(/^\uFEFF/, '');
+const workbook = XLSX.read(fileText, { type: 'string', raw: true });
 const sheet = workbook.Sheets[workbook.SheetNames[0]];
-const rows = XLSX.utils.sheet_to_json(sheet, { defval: null });
+const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: null });
+
+// Normalize header keys: trim whitespace, lowercase, then translate any
+// friendly export header to its DB column name via HEADER_ALIASES.
+function normalizeKeys(row) {
+  const out = {};
+  for (const [k, v] of Object.entries(row)) {
+    let cleanKey = String(k).trim().toLowerCase();
+    cleanKey = HEADER_ALIASES[cleanKey] || cleanKey;
+    out[cleanKey] = v;
+  }
+  return out;
+}
+const rows = rawRows.map(normalizeKeys);
 
 console.log(`Loaded ${rows.length} rows from ${csvPath}`);
+if (rows.length > 0) {
+  console.log(`Detected columns: ${Object.keys(rows[0]).join(', ')}`);
+}
 
 // Columns that are safe to write back (matches the DB schema exactly).
 // "id" is used only to find the row, not written.

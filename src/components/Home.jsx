@@ -29,7 +29,7 @@ export default function Home({ products, garments, onGoToCatalog, onGoToGarments
         if (ia === -1 && ib === -1) return a.localeCompare(b);
         if (ia === -1) return 1;
         if (ib === -1) return -1;
-        return ia - ib;
+        return ib - ia; // descending — most recent month first
       })
       .map(m => [m, c[m]]);
   }, [products]);

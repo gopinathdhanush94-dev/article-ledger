@@ -73,5 +73,5 @@ export function garmentTypeIcon(name) {
 
 export function monthOptions(rows) {
   const extra = uniqueSorted(rows, 'month').filter(m => !MONTH_ORDER.includes(m));
-  return [...new Set([...MONTH_ORDER, ...extra])];
+  return [...new Set([...MONTH_ORDER, ...extra])].reverse();
 }
