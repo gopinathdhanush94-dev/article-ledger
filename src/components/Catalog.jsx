@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx';
 import { fmtINR, discountPct, MONTH_LABEL, uniqueSorted, monthOptions } from '../lib/helpers.js';
 import ProductModal from './ProductModal.jsx';
 
-export default function Catalog({ products, initialFilters, onEdit, onDelete }) {
+export default function Catalog({ products, initialFilters, onEdit, onDelete, isAuthed }) {
   const [q, setQ] = useState('');
   const [cat, setCat] = useState('');
   const [brand, setBrand] = useState('');
@@ -43,6 +43,28 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete }) 
       return true;
     });
   }, [products, q, cat, brand, month]);
+
+  useEffect(() => {
+    if (!selected) return;
+    function onKeyDown(e) {
+      if (e.key === 'Escape') {
+        setSelected(null);
+        return;
+      }
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        const list = filtered;
+        const idx = list.findIndex(p => p.id === selected.id);
+        if (idx === -1) return;
+        const nextIdx = e.key === 'ArrowLeft' ? idx - 1 : idx + 1;
+        if (nextIdx >= 0 && nextIdx < list.length) {
+          e.preventDefault();
+          setSelected(list[nextIdx]);
+        }
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [selected, filtered]);
 
   function resetFilters() {
     setQ(''); setCat(''); setBrand(''); setMonth('');
@@ -139,9 +161,18 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete }) 
       {selected && (
         <ProductModal
           product={selected}
+          isAuthed={isAuthed}
           onClose={() => setSelected(null)}
           onEdit={() => { const p = selected; setSelected(null); onEdit(p); }}
           onDelete={() => { const p = selected; setSelected(null); onDelete(p); }}
+          onPrev={(() => {
+            const idx = filtered.findIndex(p => p.id === selected.id);
+            return idx > 0 ? () => setSelected(filtered[idx - 1]) : null;
+          })()}
+          onNext={(() => {
+            const idx = filtered.findIndex(p => p.id === selected.id);
+            return idx !== -1 && idx < filtered.length - 1 ? () => setSelected(filtered[idx + 1]) : null;
+          })()}
         />
       )}
     </>

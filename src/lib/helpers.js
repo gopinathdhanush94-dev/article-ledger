@@ -4,6 +4,32 @@ export const MONTH_LABEL = {
   'APR-26':'Apr 2026','MAY-26':'May 2026','JUN-26':'Jun 2026','JUL-26':'Jul 2026'
 };
 
+const MONTH_ABBR_TO_NUM = {
+  jan:1, feb:2, mar:3, apr:4, may:5, jun:6, june:6,
+  jul:7, july:7, aug:8, sep:9, sept:9, oct:10, nov:11, dec:12,
+};
+
+// Parses a wide variety of month-label formats ("DEC-25", "Dec-25", "dec 2025",
+// "2024_Articles", bare "2024", etc.) into a single sortable YYYYMM-style number,
+// so months sort in true chronological order regardless of casing or source batch.
+// Unparseable values sort last.
+export function monthSortKey(raw) {
+  if (!raw) return Infinity;
+  const s = String(raw).trim().toLowerCase();
+
+  let m = s.match(/([a-z]{3,4})[\s\-_]?(\d{2,4})(?!\d)/);
+  if (m && MONTH_ABBR_TO_NUM[m[1]]) {
+    const mon = MONTH_ABBR_TO_NUM[m[1]];
+    const yrPart = m[2].length === 4 ? parseInt(m[2], 10) : 2000 + parseInt(m[2], 10);
+    return yrPart * 100 + mon;
+  }
+
+  m = s.match(/(20\d{2})/);
+  if (m) return parseInt(m[1], 10) * 100;
+
+  return Infinity;
+}
+
 export function fmtINR(n) {
   return n == null ? '—' : '₹' + Number(n).toLocaleString('en-IN', { maximumFractionDigits: 0 });
 }
@@ -20,27 +46,44 @@ export function isValidEan(v) {
 }
 
 const CATEGORY_ICON_RULES = [
-  [/bag|backpack|trolley|sling|beackpack/, '🎒'],
-  [/bottle|flask/, '🍶'],
-  [/mug|cup|glass/, '☕'],
-  [/kitchen|cutter|slicer|grater|spatula/, '🍳'],
+  [/back\s*pack|beackpack/, '🎒'],
+  [/trolley|sling\s*bag|hand\s*bag|shopping\s*bag|tote\s*bag|pouch/, '👜'],
+  [/wallet|purse/, '👛'],
+  [/bottle|sipper|flask|water\s*jug/, '🍶'],
+  [/mug|cup|glass(?!es)/, '☕'],
+  [/kitchen|cutter|slicer|grater|spatula|ladle|rolling\s*pin|chopping/, '🍳'],
+  [/lunch\s*box|tiffin/, '🍱'],
+  [/plate|bowl|dinner\s*set|crockery/, '🍽️'],
+  [/jar|container|storage\s*box|organizer/, '🫙'],
   [/clock|watch/, '⏰'],
-  [/lock/, '🔒'],
+  [/lock|key\s*chain/, '🔒'],
   [/basket/, '🧺'],
-  [/towel/, '🧻'],
-  [/blanket/, '🛏️'],
-  [/mat/, '🟫'],
+  [/towel|napkin|tissue/, '🧻'],
+  [/blanket|quilt|comforter/, '🛏️'],
+  [/bedsheet|bed\s*sheet|pillow|cushion/, '🛌'],
+  [/curtain/, '🪟'],
+  [/mat(?!erial)|rug|carpet/, '🟫'],
   [/umbrella/, '☂️'],
-  [/cap|hat/, '🧢'],
+  [/cap(?!acity)|hat/, '🧢'],
+  [/sunglass|goggle/, '🕶️'],
   [/mirror/, '🪞'],
-  [/hook/, '🪝'],
-  [/mop|broom|clean/, '🧹'],
-  [/led|light|lamp/, '💡'],
-  [/stationary|stationery|pen|pencil/, '✏️'],
-  [/beauty|cosmetic/, '💄'],
-  [/dispenser/, '🧴'],
+  [/hook|hanger|rack/, '🪝'],
+  [/mop|broom|clean|duster|brush(?!ush)/, '🧹'],
+  [/soap|shampoo|body\s*wash/, '🧼'],
+  [/perfume|deo|fragrance/, '🧴'],
+  [/led|light|lamp|torch|bulb/, '💡'],
+  [/stationary|stationery|pen(?!dant)|pencil|notebook|diary/, '✏️'],
+  [/sticker|tape/, '📎'],
+  [/nail\s*sticker|nail\s*art|beauty|cosmetic|makeup|make\s*up/, '💄'],
+  [/dispenser|bottle\s*pump/, '🧴'],
   [/stapler|clip/, '📎'],
-  [/bin/, '🗑️'],
+  [/bin|dustbin|trash/, '🗑️'],
+  [/toy|game(?!s room)/, '🧸'],
+  [/vase|planter|pot(?!tery)/, '🪴'],
+  [/frame|photo/, '🖼️'],
+  [/slipper|footwear|shoe|sandal/, '🥿'],
+  [/tray/, '🍽️'],
+  [/gift\s*set|combo\s*set/, '🎁'],
 ];
 export function categoryIcon(name) {
   const n = (name || '').toLowerCase();
@@ -54,15 +97,18 @@ export function uniqueSorted(rows, key) {
 
 const GARMENT_TYPE_ICON_RULES = [
   [/jacket|puffer|coat/, '🧥'],
-  [/track\s*pant|jogger|trouser|pant/, '👖'],
+  [/track\s*pant|jogger|trouser|jegging|pant/, '👖'],
   [/short/, '🩳'],
   [/sweat\s*shirt|hoodie/, '👕'],
-  [/t[-\s]?shirt|tee|top/, '👕'],
+  [/t[-\s]?shirt|tee/, '👕'],
+  [/^shirt$|\bshirt\b/, '👔'],
+  [/vest/, '🎽'],
   [/dress|frock/, '👗'],
   [/skirt/, '👗'],
+  [/top/, '👕'],
   [/velour|thermal|inner/, '🧦'],
   [/night\s*wear|nighty|pajama|pyjama/, '🌙'],
-  [/set|combo/, '🧺'],
+  [/co-?ord|combo\s*set|^set$/, '👚'],
   [/fleece|sweater|pullover/, '🧶'],
 ];
 export function garmentTypeIcon(name) {
@@ -72,6 +118,6 @@ export function garmentTypeIcon(name) {
 }
 
 export function monthOptions(rows) {
-  const extra = uniqueSorted(rows, 'month').filter(m => !MONTH_ORDER.includes(m));
-  return [...new Set([...MONTH_ORDER, ...extra])].reverse();
+  const all = uniqueSorted(rows, 'month');
+  return [...all].sort((a, b) => monthSortKey(b) - monthSortKey(a)); // most recent first
 }

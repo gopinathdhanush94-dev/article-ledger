@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { MONTH_ORDER, MONTH_LABEL, categoryIcon, garmentTypeIcon, uniqueSorted } from '../lib/helpers.js';
+import { MONTH_LABEL, monthSortKey, categoryIcon, garmentTypeIcon, uniqueSorted } from '../lib/helpers.js';
 
 export default function Home({ products, garments, onGoToCatalog, onGoToGarments }) {
   const [catQuery, setCatQuery] = useState('');
@@ -25,11 +25,9 @@ export default function Home({ products, garments, onGoToCatalog, onGoToGarments
     products.forEach(p => { const m = p.month || 'CUSTOM'; c[m] = (c[m] || 0) + 1; });
     return Object.keys(c)
       .sort((a, b) => {
-        const ia = MONTH_ORDER.indexOf(a), ib = MONTH_ORDER.indexOf(b);
-        if (ia === -1 && ib === -1) return a.localeCompare(b);
-        if (ia === -1) return 1;
-        if (ib === -1) return -1;
-        return ib - ia; // descending — most recent month first
+        const ka = monthSortKey(a), kb = monthSortKey(b);
+        if (ka === Infinity && kb === Infinity) return a.localeCompare(b);
+        return kb - ka; // descending — most recent month first
       })
       .map(m => [m, c[m]]);
   }, [products]);

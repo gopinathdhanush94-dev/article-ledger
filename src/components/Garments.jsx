@@ -80,6 +80,27 @@ export default function Garments({ garments, initialFilters, onEdit, onDelete })
     });
   }, [grouped, q, brand, modelName, month]);
 
+  useEffect(() => {
+    if (!selected) return;
+    function onKeyDown(e) {
+      if (e.key === 'Escape') {
+        setSelected(null);
+        return;
+      }
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        const idx = filtered.findIndex(g => g.key === selected.key);
+        if (idx === -1) return;
+        const nextIdx = e.key === 'ArrowLeft' ? idx - 1 : idx + 1;
+        if (nextIdx >= 0 && nextIdx < filtered.length) {
+          e.preventDefault();
+          setSelected(filtered[nextIdx]);
+        }
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [selected, filtered]);
+
   function resetFilters() { setQ(''); setBrand(''); setModelName(''); setMonth(''); }
 
   function downloadXlsx() {
@@ -179,15 +200,24 @@ export default function Garments({ garments, initialFilters, onEdit, onDelete })
           onClose={() => setSelected(null)}
           onEdit={() => { const g = selected; setSelected(null); onEdit(g); }}
           onDelete={() => { const g = selected; setSelected(null); onDelete(g); }}
+          onPrev={(() => {
+            const idx = filtered.findIndex(x => x.key === selected.key);
+            return idx > 0 ? () => setSelected(filtered[idx - 1]) : null;
+          })()}
+          onNext={(() => {
+            const idx = filtered.findIndex(x => x.key === selected.key);
+            return idx !== -1 && idx < filtered.length - 1 ? () => setSelected(filtered[idx + 1]) : null;
+          })()}
         />
       )}
     </>
   );
 }
 
-function GarmentModal({ garment: g, onClose, onEdit, onDelete }) {
+function GarmentModal({ garment: g, onClose, onEdit, onDelete, onPrev, onNext }) {
   return (
     <div className="overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      {onPrev && <button className="modal-nav-btn prev" onClick={onPrev} title="Previous">‹</button>}
       <div className="modal" onMouseDown={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose}>✕</button>
         <div className="modal-grid">
@@ -247,6 +277,7 @@ function GarmentModal({ garment: g, onClose, onEdit, onDelete }) {
           </div>
         </div>
       </div>
+      {onNext && <button className="modal-nav-btn next" onClick={onNext} title="Next">›</button>}
     </div>
   );
 }

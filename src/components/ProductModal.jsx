@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../supabaseClient.js';
 import { fmtINR, discountPct, MONTH_LABEL } from '../lib/helpers.js';
 
 function dims(l, w, h, unit) {
@@ -10,8 +11,41 @@ function wt(nw, gw, unit) {
   return `N.W ${nw ?? '—'} ${u} · G.W ${gw ?? '—'} ${u}`;
 }
 
-export default function ProductModal({ product: p, onClose, onEdit, onDelete }) {
+const FIELD_LABELS = {
+  mrp: 'MRP', sp: 'Selling Price',
+  master_qty: 'Master Ctn Qty', inner_qty: 'Inner Ctn Qty',
+  master_l: 'Master Length', master_w: 'Master Width', master_h: 'Master Height', master_dim_unit: 'Master Dim Unit',
+  inner_l: 'Inner Length', inner_w: 'Inner Width', inner_h: 'Inner Height', inner_dim_unit: 'Inner Dim Unit',
+};
+
+function formatWhen(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+export default function ProductModal({ product: p, isAuthed, onClose, onEdit, onDelete, onPrev, onNext }) {
   const off = discountPct(p.mrp, p.sp);
+  const [history, setHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthed || !p?.id) { setHistory([]); return; }
+    let cancelled = false;
+    setHistoryLoading(true);
+    supabase
+      .from('product_field_changes')
+      .select('*')
+      .eq('product_id', p.id)
+      .order('changed_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        setHistory(error ? [] : (data || []));
+        setHistoryLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [p?.id, isAuthed]);
+
   const rows = [
     ['EAN Code', p.ean || '—'],
     ['Model', p.model || '—'],
@@ -31,6 +65,7 @@ export default function ProductModal({ product: p, onClose, onEdit, onDelete }) 
 
   return (
     <div className="overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      {onPrev && <button className="modal-nav-btn prev" onClick={onPrev} title="Previous">‹</button>}
       <div className="modal" onMouseDown={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose}>✕</button>
         <div className="modal-grid">
@@ -53,13 +88,48 @@ export default function ProductModal({ product: p, onClose, onEdit, onDelete }) 
                 ))}
               </tbody>
             </table>
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 20 }}>
               <button className="btn" onClick={onEdit}>✎ Edit</button>
               <button className="btn btn-danger" onClick={onDelete}>🗑 Delete</button>
             </div>
+
+            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, fontSize: 13.5, color: 'var(--text)', marginBottom: 8 }}>
+              Change History
+            </div>
+            {!isAuthed ? (
+              <div style={{ fontSize: 12.5, color: 'var(--text-soft)' }}>Sign in to view price, quantity, and dimension change history.</div>
+            ) : historyLoading ? (
+              <div style={{ fontSize: 12.5, color: 'var(--text-soft)' }}>Loading history…</div>
+            ) : history.length === 0 ? (
+              <div style={{ fontSize: 12.5, color: 'var(--text-soft)' }}>No changes recorded yet — this is the original data.</div>
+            ) : (
+              <div style={{ maxHeight: 200, overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 8 }}>
+                <table className="detail-table" style={{ marginBottom: 0, fontSize: 12 }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1.5px solid var(--border-strong)' }}>
+                      <td style={{ fontWeight: 700 }}>Field</td>
+                      <td style={{ fontWeight: 700 }}>Old → New</td>
+                      <td style={{ fontWeight: 700 }}>By</td>
+                      <td style={{ fontWeight: 700 }}>When</td>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {history.map(h => (
+                      <tr key={h.id}>
+                        <td>{FIELD_LABELS[h.field_name] || h.field_name}</td>
+                        <td>{h.old_value ?? '—'} → {h.new_value ?? '—'}</td>
+                        <td>{h.changed_by_email || 'Bulk import/script'}</td>
+                        <td>{formatWhen(h.changed_at)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       </div>
+      {onNext && <button className="modal-nav-btn next" onClick={onNext} title="Next">›</button>}
     </div>
   );
 }

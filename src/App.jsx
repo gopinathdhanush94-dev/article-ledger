@@ -258,6 +258,7 @@ function AppInner() {
               initialFilters={catalogFilters}
               onEdit={openEditForm}
               onDelete={deleteProduct}
+              isAuthed={isAuthed}
             />
           )}
           {view === 'add-product' && (

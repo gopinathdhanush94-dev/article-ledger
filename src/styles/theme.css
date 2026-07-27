@@ -132,6 +132,21 @@ main, .home-wrap, .form-wrap{ max-width:1400px; margin:0 auto; padding:24px 32px
 .modal{ background:var(--surface); max-width:820px; width:100%; max-height:88vh; overflow-y:auto; border-radius:var(--radius-lg); border:1px solid var(--border); box-shadow:var(--shadow-lg); position:relative; }
 .modal-close{ position:absolute; top:14px; right:14px; width:32px;height:32px;border-radius:50%; background:var(--bg-subtle); color:var(--text-soft); border:1px solid var(--border); cursor:pointer; font-size:14px; transition:background .12s ease; }
 .modal-close:hover{ background:var(--border); color:var(--text); }
+.modal-nav-btn{
+  flex:none; width:44px; height:44px; border-radius:50%;
+  background:rgba(255,255,255,0.95); color:var(--text); border:1px solid var(--border);
+  cursor:pointer; font-size:22px; line-height:1; box-shadow:var(--shadow-md);
+  display:flex; align-items:center; justify-content:center;
+  transition:background .12s ease, transform .12s ease;
+}
+.modal-nav-btn:hover{ background:var(--primary); color:#fff; border-color:var(--primary); transform:scale(1.06); }
+.modal-nav-btn.prev{ margin-right:16px; }
+.modal-nav-btn.next{ margin-left:16px; }
+@media (max-width:720px){
+  .modal-nav-btn{ width:36px; height:36px; font-size:18px; }
+  .modal-nav-btn.prev{ margin-right:8px; }
+  .modal-nav-btn.next{ margin-left:8px; }
+}
 .modal-grid{ display:grid; grid-template-columns:1fr 1fr; }
 .modal-img{ background:var(--bg-subtle); display:flex; align-items:center; justify-content:center; padding:30px; border-right:1px solid var(--border); min-height:280px; }
 .modal-img img{ max-width:100%; max-height:340px; object-fit:contain; }
