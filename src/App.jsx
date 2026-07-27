@@ -29,6 +29,7 @@ function AppInner() {
   const [products, setProducts] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState(null);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [catalogFilters, setCatalogFilters] = useState(null);
   const [editingProduct, setEditingProduct] = useState(null);
   const [showLogin, setShowLogin] = useState(false);
@@ -37,6 +38,7 @@ function AppInner() {
   const [garments, setGarments] = useState([]);
   const [garmentsLoading, setGarmentsLoading] = useState(true);
   const [garmentsError, setGarmentsError] = useState(null);
+  const [garmentsHasLoadedOnce, setGarmentsHasLoadedOnce] = useState(false);
   const [garmentFilters, setGarmentFilters] = useState(null);
   const [editingGarmentGroup, setEditingGarmentGroup] = useState(null);
 
@@ -88,6 +90,7 @@ function AppInner() {
       const data = await fetchAllRows('products');
       setProducts(data);
       setDataError(null);
+      setHasLoadedOnce(true);
     } catch (err) {
       setDataError(err.message);
     }
@@ -100,6 +103,7 @@ function AppInner() {
       const data = await fetchAllRows('garments');
       setGarments(data);
       setGarmentsError(null);
+      setGarmentsHasLoadedOnce(true);
     } catch (err) {
       setGarmentsError(err.message);
     }
@@ -233,13 +237,13 @@ function AppInner() {
         </nav>
       </header>
 
-      {dataLoading && (
+      {dataLoading && !hasLoadedOnce && (
         <div style={{ padding: 60, textAlign: 'center', fontFamily: "'Inter',sans-serif", color: 'var(--ink-soft)' }}>
           Loading catalog…
         </div>
       )}
 
-      {dataError && (
+      {dataError && !hasLoadedOnce && (
         <div style={{ padding: 40, textAlign: 'center', fontFamily: "'Inter',sans-serif", color: 'var(--danger)' }}>
           Could not load products: {dataError}
           <br /><br />
@@ -247,12 +251,18 @@ function AppInner() {
         </div>
       )}
 
-      {!dataLoading && !dataError && (
+      {dataError && hasLoadedOnce && (
+        <div style={{ padding: '10px 32px', textAlign: 'center', fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'var(--danger)', background: 'var(--danger-soft)', borderBottom: '1px solid var(--danger)' }}>
+          Couldn't refresh products just now ({dataError}) — showing the last data that loaded successfully.
+        </div>
+      )}
+
+      {hasLoadedOnce && (
         <>
-          {view === 'home' && (
+          <div style={{ display: view === 'home' ? 'block' : 'none' }}>
             <Home products={products} garments={garments} onGoToCatalog={goToCatalog} onGoToGarments={goToGarments} />
-          )}
-          {view === 'catalog' && (
+          </div>
+          <div style={{ display: view === 'catalog' ? 'block' : 'none' }}>
             <Catalog
               products={products}
               initialFilters={catalogFilters}
@@ -260,48 +270,51 @@ function AppInner() {
               onDelete={deleteProduct}
               isAuthed={isAuthed}
             />
-          )}
-          {view === 'add-product' && (
+          </div>
+          <div style={{ display: view === 'add-product' ? 'block' : 'none' }}>
             <AddProductForm
               products={products}
               editingProduct={editingProduct}
               onSaved={handleProductSaved}
-              onCancel={() => navigate('catalog')}
+              onCancel={() => { setEditingProduct(null); navigate('catalog'); }}
             />
-          )}
-          {view === 'garments' && (
-            <>
-              {garmentsLoading && (
-                <div style={{ padding: 60, textAlign: 'center', fontFamily: "'Inter',sans-serif", color: 'var(--ink-soft)' }}>
-                  Loading garments…
-                </div>
-              )}
-              {garmentsError && (
-                <div style={{ padding: 40, textAlign: 'center', fontFamily: "'Inter',sans-serif", color: 'var(--danger)' }}>
-                  Could not load garments: {garmentsError}
-                  <br /><br />
-                  Check that supabase/garments_schema.sql has been run and the migration completed.
-                </div>
-              )}
-              {!garmentsLoading && !garmentsError && (
-                <Garments garments={garments} initialFilters={garmentFilters} onEdit={openEditGarment} onDelete={deleteGarment} />
-              )}
-            </>
-          )}
-          {view === 'add-garment' && (
+          </div>
+          <div style={{ display: view === 'garments' ? 'block' : 'none' }}>
+            {garmentsLoading && !garmentsHasLoadedOnce && (
+              <div style={{ padding: 60, textAlign: 'center', fontFamily: "'Inter',sans-serif", color: 'var(--ink-soft)' }}>
+                Loading garments…
+              </div>
+            )}
+            {garmentsError && !garmentsHasLoadedOnce && (
+              <div style={{ padding: 40, textAlign: 'center', fontFamily: "'Inter',sans-serif", color: 'var(--danger)' }}>
+                Could not load garments: {garmentsError}
+                <br /><br />
+                Check that supabase/garments_schema.sql has been run and the migration completed.
+              </div>
+            )}
+            {garmentsError && garmentsHasLoadedOnce && (
+              <div style={{ padding: '10px 20px', textAlign: 'center', fontFamily: "'Inter',sans-serif", fontSize: 13, color: 'var(--danger)', background: 'var(--danger-soft)', borderBottom: '1px solid var(--danger)' }}>
+                Couldn't refresh garments just now ({garmentsError}) — showing the last data that loaded successfully.
+              </div>
+            )}
+            {garmentsHasLoadedOnce && (
+              <Garments garments={garments} initialFilters={garmentFilters} onEdit={openEditGarment} onDelete={deleteGarment} />
+            )}
+          </div>
+          <div style={{ display: view === 'add-garment' ? 'block' : 'none' }}>
             <GarmentForm
               garments={garments}
               editingGroup={editingGarmentGroup}
               onSaved={handleGarmentSaved}
-              onCancel={() => navigate('garments')}
+              onCancel={() => { setEditingGarmentGroup(null); navigate('garments'); }}
             />
-          )}
-          {view === 'import-excel' && (
+          </div>
+          <div style={{ display: view === 'import-excel' ? 'block' : 'none' }}>
             <ImportExcel
               onDone={() => { loadProducts(); loadGarments(); }}
               onCancel={() => navigate('home')}
             />
-          )}
+          </div>
         </>
       )}
 
