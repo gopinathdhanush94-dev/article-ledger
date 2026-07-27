@@ -261,7 +261,7 @@ export default function AddProductForm({ products, editingProduct, onSaved, onCa
               <label>Product Image</label>
               <div className="img-drop">
                 <div className="preview">
-                  {imagePreview ? <img src={imagePreview} alt="" /> : <span style={{ fontSize: 9, fontFamily: "'JetBrains Mono',monospace", color: '#A79E85' }}>NO IMAGE</span>}
+                  {imagePreview ? <img src={imagePreview} alt="" /> : <span style={{ fontSize: 9, fontFamily: "'Inter',sans-serif", color: '#A79E85' }}>NO IMAGE</span>}
                 </div>
                 <div>
                   <input type="file" accept="image/*" onChange={handleImageChange} />
@@ -366,7 +366,7 @@ export default function AddProductForm({ products, editingProduct, onSaved, onCa
             <button type="button" className="btn" onClick={downloadBulkTemplate}>⬇ Download CSV template</button>
           </div>
           {bulkResult.length > 0 && (
-            <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, marginTop: 12 }}>
+            <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, marginTop: 12 }}>
               <div style={{ fontWeight: 600 }}>
                 {bulkResult.filter(r => r.ok).length} added · {bulkResult.filter(r => !r.ok).length} skipped
               </div>

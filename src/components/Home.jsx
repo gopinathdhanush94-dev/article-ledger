@@ -58,7 +58,7 @@ export default function Home({ products, garments, onGoToCatalog, onGoToGarments
     <div className="home-wrap">
       <div style={{ marginBottom: 22 }}>
         <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 24, margin: 0 }}>Overview</h2>
-        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: 'var(--ink-soft)', marginTop: 4 }}>
+        <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'var(--ink-soft)', marginTop: 4 }}>
           Live snapshot of the article ledger.
         </div>
       </div>
@@ -70,13 +70,13 @@ export default function Home({ products, garments, onGoToCatalog, onGoToGarments
       </div>
 
       <div className="panel">
-        <h3>Categories <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5, color: 'var(--ink-soft)', fontWeight: 500 }}>{catCounts.length} categories</span></h3>
+        <h3>Categories <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 10.5, color: 'var(--ink-soft)', fontWeight: 500 }}>{catCounts.length} categories</span></h3>
         <div className="panel-hint">Search or click a category to view its articles</div>
         <div className="cat-search-box">
           <input placeholder="Search categories…" value={catQuery} onChange={(e) => setCatQuery(e.target.value)} />
         </div>
         {filteredCats.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '30px 10px', fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: 'var(--ink-soft)' }}>
+          <div style={{ textAlign: 'center', padding: '30px 10px', fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'var(--ink-soft)' }}>
             No categories match your search.
           </div>
         ) : (
@@ -94,7 +94,7 @@ export default function Home({ products, garments, onGoToCatalog, onGoToGarments
       </div>
 
       <div className="panel">
-        <h3>Articles by Month <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5, color: 'var(--ink-soft)', fontWeight: 500 }}>{monthCounts.length} months</span></h3>
+        <h3>Articles by Month <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 10.5, color: 'var(--ink-soft)', fontWeight: 500 }}>{monthCounts.length} months</span></h3>
         <div className="panel-hint">Click a month to view its articles</div>
         <div style={{ maxHeight: 420, overflowY: 'auto' }}>
           {monthCounts.map(([m, count], i) => (
@@ -112,7 +112,7 @@ export default function Home({ products, garments, onGoToCatalog, onGoToGarments
 
       <div style={{ margin: '36px 0 22px' }}>
         <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 24, margin: 0 }}>Garments</h2>
-        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: 'var(--ink-soft)', marginTop: 4 }}>
+        <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'var(--ink-soft)', marginTop: 4 }}>
           Separate dataset from the article catalog above.
         </div>
       </div>
@@ -124,13 +124,13 @@ export default function Home({ products, garments, onGoToCatalog, onGoToGarments
       </div>
 
       <div className="panel">
-        <h3>Garment Styles <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5, color: 'var(--ink-soft)', fontWeight: 500 }}>{garmentStyleCounts.length} styles</span></h3>
+        <h3>Garment Styles <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 10.5, color: 'var(--ink-soft)', fontWeight: 500 }}>{garmentStyleCounts.length} styles</span></h3>
         <div className="panel-hint">Search or click a style to view its garments</div>
         <div className="cat-search-box">
           <input placeholder="Search styles…" value={styleQuery} onChange={(e) => setStyleQuery(e.target.value)} />
         </div>
         {filteredStyles.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '30px 10px', fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: 'var(--ink-soft)' }}>
+          <div style={{ textAlign: 'center', padding: '30px 10px', fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'var(--ink-soft)' }}>
             {garmentStyleCounts.length === 0 ? 'No garment data yet.' : 'No styles match your search.'}
           </div>
         ) : (
@@ -148,10 +148,10 @@ export default function Home({ products, garments, onGoToCatalog, onGoToGarments
       </div>
 
       <div className="panel">
-        <h3>Garments by Brand <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5, color: 'var(--ink-soft)', fontWeight: 500 }}>{garmentBrandCounts.length} brands</span></h3>
+        <h3>Garments by Brand <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 10.5, color: 'var(--ink-soft)', fontWeight: 500 }}>{garmentBrandCounts.length} brands</span></h3>
         <div className="panel-hint">Click a brand to view its garments</div>
         {garmentBrandCounts.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '30px 10px', fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: 'var(--ink-soft)' }}>
+          <div style={{ textAlign: 'center', padding: '30px 10px', fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'var(--ink-soft)' }}>
             No garment data yet.
           </div>
         ) : (

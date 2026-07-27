@@ -157,7 +157,7 @@ export default function Garments({ garments, initialFilters, onEdit, onDelete })
                     <span className="cat-tag">{g.model_name || 'Garment'}</span>
                     <h3 className="card-title">{g.excel_name || g.customer_model || 'Unnamed style'}</h3>
                     <div className="card-brand">{g.brand}{g.color ? ` · ${g.color}` : ''}</div>
-                    <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5, color: 'var(--ink-soft)' }}>
+                    <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 10.5, color: 'var(--ink-soft)' }}>
                       {sizeList || 'No sizes listed'}
                     </div>
                     <div className="price-row">

@@ -12,12 +12,12 @@ import ImportExcel from './components/ImportExcel.jsx';
 
 const BrandIconSVG = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="3" y="2" width="14" height="20" rx="2" stroke="#E9B98C" strokeWidth="1.6" />
-    <path d="M7 7H13" stroke="#F4F1E6" strokeWidth="1.6" strokeLinecap="round" />
-    <path d="M7 11H13" stroke="#F4F1E6" strokeWidth="1.6" strokeLinecap="round" />
-    <path d="M7 15H10.5" stroke="#F4F1E6" strokeWidth="1.6" strokeLinecap="round" />
-    <circle cx="18" cy="17" r="4" fill="#C1622B" stroke="#17233B" strokeWidth="1" />
-    <path d="M16.6 17L17.6 18L19.6 15.6" stroke="#F4F1E6" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+    <rect x="3" y="2" width="14" height="20" rx="2" stroke="rgba(255,255,255,0.85)" strokeWidth="1.6" />
+    <path d="M7 7H13" stroke="#FFFFFF" strokeWidth="1.6" strokeLinecap="round" />
+    <path d="M7 11H13" stroke="#FFFFFF" strokeWidth="1.6" strokeLinecap="round" />
+    <path d="M7 15H10.5" stroke="#FFFFFF" strokeWidth="1.6" strokeLinecap="round" />
+    <circle cx="18" cy="17" r="4" fill="#FFFFFF" />
+    <path d="M16.6 17L17.6 18L19.6 15.6" stroke="#E4572E" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
@@ -234,13 +234,13 @@ function AppInner() {
       </header>
 
       {dataLoading && (
-        <div style={{ padding: 60, textAlign: 'center', fontFamily: "'JetBrains Mono',monospace", color: 'var(--ink-soft)' }}>
+        <div style={{ padding: 60, textAlign: 'center', fontFamily: "'Inter',sans-serif", color: 'var(--ink-soft)' }}>
           Loading catalog…
         </div>
       )}
 
       {dataError && (
-        <div style={{ padding: 40, textAlign: 'center', fontFamily: "'JetBrains Mono',monospace", color: 'var(--danger)' }}>
+        <div style={{ padding: 40, textAlign: 'center', fontFamily: "'Inter',sans-serif", color: 'var(--danger)' }}>
           Could not load products: {dataError}
           <br /><br />
           Check that VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY are set and that supabase/schema.sql has been run.
@@ -271,12 +271,12 @@ function AppInner() {
           {view === 'garments' && (
             <>
               {garmentsLoading && (
-                <div style={{ padding: 60, textAlign: 'center', fontFamily: "'JetBrains Mono',monospace", color: 'var(--ink-soft)' }}>
+                <div style={{ padding: 60, textAlign: 'center', fontFamily: "'Inter',sans-serif", color: 'var(--ink-soft)' }}>
                   Loading garments…
                 </div>
               )}
               {garmentsError && (
-                <div style={{ padding: 40, textAlign: 'center', fontFamily: "'JetBrains Mono',monospace", color: 'var(--danger)' }}>
+                <div style={{ padding: 40, textAlign: 'center', fontFamily: "'Inter',sans-serif", color: 'var(--danger)' }}>
                   Could not load garments: {garmentsError}
                   <br /><br />
                   Check that supabase/garments_schema.sql has been run and the migration completed.

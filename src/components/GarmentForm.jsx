@@ -149,7 +149,7 @@ export default function GarmentForm({ garments, editingGroup, onSaved, onCancel 
               <label>Style Photo</label>
               <div className="img-drop">
                 <div className="preview">
-                  {imagePreview ? <img src={imagePreview} alt="" /> : <span style={{ fontSize: 9, fontFamily: "'JetBrains Mono',monospace", color: '#A79E85' }}>NO IMAGE</span>}
+                  {imagePreview ? <img src={imagePreview} alt="" /> : <span style={{ fontSize: 9, fontFamily: "'Inter',sans-serif", color: '#A79E85' }}>NO IMAGE</span>}
                 </div>
                 <div>
                   <input type="file" accept="image/*" onChange={handleImageChange} />

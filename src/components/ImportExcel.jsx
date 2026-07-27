@@ -349,7 +349,7 @@ export default function ImportExcel({ onDone, onCancel }) {
             </div>
 
             {result && (
-              <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12.5, marginBottom: 20, padding: '14px 16px', border: '1px solid var(--rule)', borderRadius: 6, background: 'var(--paper)' }}>
+              <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12.5, marginBottom: 20, padding: '14px 16px', border: '1px solid var(--rule)', borderRadius: 6, background: 'var(--paper)' }}>
                 <div style={{ fontWeight: 700, marginBottom: 6 }}>Import complete</div>
                 <div>Total rows read: {result.total}</div>
                 <div style={{ color: 'var(--teal)' }}>Inserted: {result.inserted}</div>
