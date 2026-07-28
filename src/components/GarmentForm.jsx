@@ -75,6 +75,17 @@ export default function GarmentForm({ garments, editingGroup, onSaved, onCancel 
       return;
     }
 
+    dialogs.confirmDialog({
+      title: editingGroup ? 'Save changes to this garment style?' : 'Add this garment style?',
+      message: editingGroup
+        ? 'This will replace the size list for this style with what you\'ve entered in the form.'
+        : `Double-check the form — ${validSizeRows.length} size${validSizeRows.length === 1 ? '' : 's'} will be saved right away once confirmed.`,
+      confirmLabel: editingGroup ? 'Save Changes' : 'Add Garment Style',
+      onConfirm: () => performSave(validSizeRows),
+    });
+  }
+
+  async function performSave(validSizeRows) {
     setSaving(true);
     try {
       let imageUrl = editingGroup?.image_url || null;

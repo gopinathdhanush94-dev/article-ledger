@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient.js';
-import { isValidEan, uniqueSorted, monthOptions } from '../lib/helpers.js';
+import { isValidEan, uniqueSorted, monthOptions, normalizeMonthValue } from '../lib/helpers.js';
 import Autocomplete from './Autocomplete.jsx';
 import { useDialogs } from './Dialogs.jsx';
 
@@ -98,6 +98,17 @@ export default function AddProductForm({ products, editingProduct, onSaved, onCa
       return;
     }
 
+    dialogs.confirmDialog({
+      title: form.id ? 'Save changes to this article?' : 'Add this article?',
+      message: form.id
+        ? 'This will update the article with what you\'ve entered in the form.'
+        : 'Double-check the form — once confirmed, this article is saved right away.',
+      confirmLabel: form.id ? 'Save Changes' : 'Add Article',
+      onConfirm: () => performSave(ean),
+    });
+  }
+
+  async function performSave(ean) {
     setSaving(true);
     try {
       let imageUrl = form.image_url;
@@ -122,7 +133,7 @@ export default function AddProductForm({ products, editingProduct, onSaved, onCa
         inner_qty: form.inner_qty === '' ? null : parseInt(form.inner_qty, 10),
         article_no: form.article_no.trim() || null,
         marketed_by: form.marketed_by.trim() || null,
-        month: (form.month || '').trim().toUpperCase() || null,
+        month: normalizeMonthValue(form.month),
         sku_l: numOrNull(form.sku_l), sku_w: numOrNull(form.sku_w), sku_h: numOrNull(form.sku_h),
         sku_dim_unit: form.sku_dim_unit, sku_nw: numOrNull(form.sku_nw), sku_gw: numOrNull(form.sku_gw), sku_wt_unit: form.sku_wt_unit,
         master_l: numOrNull(form.master_l), master_w: numOrNull(form.master_w), master_h: numOrNull(form.master_h),
@@ -215,7 +226,7 @@ export default function AddProductForm({ products, editingProduct, onSaved, onCa
       seen.add(ean);
 
       const row = {
-        month: (get(r, 'Month') || 'CUSTOM').toUpperCase(),
+        month: normalizeMonthValue(get(r, 'Month')) || 'CUSTOM',
         category: get(r, 'Category') || 'Uncategorized',
         brand: get(r, 'Brand') || 'Unbranded',
         model: get(r, 'Model') || null,

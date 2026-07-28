@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient.js';
-import { fmtINR, discountPct, MONTH_LABEL } from '../lib/helpers.js';
+import { fmtINR, discountPct, formatMonthLabel } from '../lib/helpers.js';
 
 function dims(l, w, h, unit) {
   return (l || w || h) ? `${l ?? '—'} × ${w ?? '—'} × ${h ?? '—'} ${(unit || 'CM').toLowerCase()}` : '—';
@@ -54,7 +54,7 @@ export default function ProductModal({ product: p, isAuthed, onClose, onEdit, on
     ['Master Ctn Qty', p.master_qty ?? '—'],
     ['Inner Ctn Qty', p.inner_qty ?? '—'],
     ['Marketed By', p.marketed_by || '—'],
-    ['PO Month', MONTH_LABEL[p.month] || p.month || '—'],
+    ['PI Month', formatMonthLabel(p.month)],
     ['SKU Dimensions', dims(p.sku_l, p.sku_w, p.sku_h, p.sku_dim_unit)],
     ['SKU Weight', wt(p.sku_nw, p.sku_gw, p.sku_wt_unit)],
     ['Master Ctn Dimensions', dims(p.master_l, p.master_w, p.master_h, p.master_dim_unit)],
@@ -77,9 +77,15 @@ export default function ProductModal({ product: p, isAuthed, onClose, onEdit, on
             <h2 className="modal-title">{p.description || p.model}</h2>
             <div className="modal-brand">{p.brand}</div>
             <div className="price-row" style={{ marginBottom: 16 }}>
-              <span className="sp" style={{ fontSize: 26 }}>{fmtINR(p.sp)}</span>
-              {p.mrp ? <span className="mrp" style={{ fontSize: 14 }}>{fmtINR(p.mrp)}</span> : null}
-              {off ? <span className="off-badge">{off}% OFF</span> : null}
+              {p.sp != null ? (
+                <>
+                  <span className="sp" style={{ fontSize: 26 }}>{fmtINR(p.sp)}</span>
+                  {p.mrp ? <span className="mrp" style={{ fontSize: 14 }}>{fmtINR(p.mrp)}</span> : null}
+                  {off ? <span className="off-badge">{off}% OFF</span> : null}
+                </>
+              ) : (
+                p.mrp != null && <span className="sp" style={{ fontSize: 26 }}>{fmtINR(p.mrp)}</span>
+              )}
             </div>
             <table className="detail-table">
               <tbody>

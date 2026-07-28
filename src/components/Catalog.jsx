@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
-import { fmtINR, discountPct, MONTH_LABEL, uniqueSorted, monthOptions } from '../lib/helpers.js';
+import { fmtINR, discountPct, formatMonthLabel, uniqueSorted, monthOptions } from '../lib/helpers.js';
 import ProductModal from './ProductModal.jsx';
 
 export default function Catalog({ products, initialFilters, onEdit, onDelete, isAuthed }) {
@@ -80,7 +80,7 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
     filtered.forEach(p => {
       const off = discountPct(p.mrp, p.sp);
       aoa.push([
-        p.id, MONTH_LABEL[p.month] || p.month, p.category, p.brand, p.model, p.description,
+        p.id, formatMonthLabel(p.month), p.category, p.brand, p.model, p.description,
         p.ean, p.mrp ?? '', p.sp ?? '', off ?? '', p.hsn, p.article_no, p.marketed_by,
         p.master_qty ?? '', p.inner_qty ?? '',
         p.sku_l ?? '', p.sku_w ?? '', p.sku_h ?? '', p.sku_dim_unit ?? '', p.sku_nw ?? '', p.sku_gw ?? '', p.sku_wt_unit ?? '',
@@ -113,7 +113,7 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
           </select>
           <select value={month} onChange={(e) => setMonth(e.target.value)}>
             <option value="">All months</option>
-            {months.filter(m => products.some(p => p.month === m)).map(m => <option key={m} value={m}>{MONTH_LABEL[m] || m}</option>)}
+            {months.filter(m => products.some(p => p.month === m)).map(m => <option key={m} value={m}>{formatMonthLabel(m)}</option>)}
           </select>
           <button className="btn btn-rust" onClick={resetFilters}>Reset filters</button>
           <button className="btn btn-teal" onClick={downloadXlsx}>⬇ Download filtered (.xlsx)</button>
@@ -145,11 +145,17 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
                     <div className="card-brand">{p.brand}{p.model ? ` · ${p.model}` : ''}</div>
                     <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5, color: 'var(--ink-soft)' }}>{p.ean || 'EAN N/A'}</div>
                     <div className="price-row">
-                      <span className="sp">{fmtINR(p.sp)}</span>
-                      {p.mrp ? <span className="mrp">{fmtINR(p.mrp)}</span> : null}
-                      {off ? <span className="off-badge">{off}% OFF</span> : null}
+                      {p.sp != null ? (
+                        <>
+                          <span className="sp">{fmtINR(p.sp)}</span>
+                          {p.mrp ? <span className="mrp">{fmtINR(p.mrp)}</span> : null}
+                          {off ? <span className="off-badge">{off}% OFF</span> : null}
+                        </>
+                      ) : (
+                        p.mrp != null && <span className="sp">{fmtINR(p.mrp)}</span>
+                      )}
                     </div>
-                    <div className="meta-line"><span>HSN {p.hsn || '—'}</span><span>{MONTH_LABEL[p.month] || p.month || '—'}</span></div>
+                    <div className="meta-line"><span>HSN {p.hsn || '—'}</span><span>{formatMonthLabel(p.month)}</span></div>
                   </div>
                 </article>
               );

@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { MONTH_LABEL, monthSortKey, categoryIcon, garmentTypeIcon, uniqueSorted } from '../lib/helpers.js';
+import { formatMonthLabel, monthSortKey, categoryIcon, garmentTypeIcon, uniqueSorted } from '../lib/helpers.js';
 
 export default function Home({ products, garments, onGoToCatalog, onGoToGarments }) {
   const [catQuery, setCatQuery] = useState('');
@@ -98,7 +98,7 @@ export default function Home({ products, garments, onGoToCatalog, onGoToGarments
           {monthCounts.map(([m, count], i) => (
             <div key={m} className="bar-row" onClick={() => onGoToCatalog({ month: m })}>
               <div className="bar-rank">{i + 1}</div>
-              <div className="bar-label" title={MONTH_LABEL[m] || m}>{MONTH_LABEL[m] || m}</div>
+              <div className="bar-label" title={formatMonthLabel(m)}>{formatMonthLabel(m)}</div>
               <div className="bar-track">
                 <div className="bar-fill" style={{ width: animate ? `${(count / monthMax * 100).toFixed(0)}%` : '0%' }} />
               </div>
