@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { formatMonthLabel, monthSortKey, categoryIcon, garmentTypeIcon, uniqueSorted } from '../lib/helpers.js';
+import { formatMonthLabel, normalizeMonthValue, monthSortKey, categoryIcon, garmentTypeIcon, uniqueSorted } from '../lib/helpers.js';
 
 export default function Home({ products, garments, onGoToCatalog, onGoToGarments }) {
   const [catQuery, setCatQuery] = useState('');
@@ -22,7 +22,7 @@ export default function Home({ products, garments, onGoToCatalog, onGoToGarments
 
   const monthCounts = useMemo(() => {
     const c = {};
-    products.forEach(p => { const m = p.month || 'CUSTOM'; c[m] = (c[m] || 0) + 1; });
+    products.forEach(p => { const m = normalizeMonthValue(p.month) || 'CUSTOM'; c[m] = (c[m] || 0) + 1; });
     return Object.keys(c)
       .sort((a, b) => {
         const ka = monthSortKey(a), kb = monthSortKey(b);

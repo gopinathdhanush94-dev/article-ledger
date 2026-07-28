@@ -156,6 +156,10 @@ export function garmentTypeIcon(name) {
 }
 
 export function monthOptions(rows) {
-  const all = uniqueSorted(rows, 'month');
-  return [...all].sort((a, b) => monthSortKey(b) - monthSortKey(a)); // most recent first
+  const seen = new Set();
+  for (const r of rows) {
+    const norm = normalizeMonthValue(r.month);
+    if (norm) seen.add(norm);
+  }
+  return [...seen].sort((a, b) => monthSortKey(b) - monthSortKey(a)); // most recent first
 }

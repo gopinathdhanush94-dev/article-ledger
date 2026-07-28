@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
-import { fmtINR, discountPct, formatMonthLabel, uniqueSorted, monthOptions } from '../lib/helpers.js';
+import { fmtINR, discountPct, formatMonthLabel, normalizeMonthValue, uniqueSorted, monthOptions } from '../lib/helpers.js';
 import ProductModal from './ProductModal.jsx';
 
 export default function Catalog({ products, initialFilters, onEdit, onDelete, isAuthed }) {
@@ -34,7 +34,7 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
     return products.filter(p => {
       if (cat && p.category !== cat) return false;
       if (brand && p.brand !== brand) return false;
-      if (month && p.month !== month) return false;
+      if (month && normalizeMonthValue(p.month) !== month) return false;
       if (query) {
         const hay = [p.ean, p.brand, p.category, p.description, p.model, p.article_no, p.hsn]
           .filter(Boolean).join(' ').toLowerCase();
@@ -113,7 +113,7 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
           </select>
           <select value={month} onChange={(e) => setMonth(e.target.value)}>
             <option value="">All months</option>
-            {months.filter(m => products.some(p => p.month === m)).map(m => <option key={m} value={m}>{formatMonthLabel(m)}</option>)}
+            {months.map(m => <option key={m} value={m}>{formatMonthLabel(m)}</option>)}
           </select>
           <button className="btn btn-rust" onClick={resetFilters}>Reset filters</button>
           <button className="btn btn-teal" onClick={downloadXlsx}>⬇ Download filtered (.xlsx)</button>
