@@ -3,6 +3,7 @@ import * as XLSX from 'xlsx';
 import { fmtINR, discountPct, formatMonthLabel, normalizeMonthValue, uniqueSorted, monthOptions } from '../lib/helpers.js';
 import ProductModal from './ProductModal.jsx';
 import { ResetIcon, DownloadIcon } from './Icons.jsx';
+import { useHideOnScroll } from '../lib/useHideOnScroll.js';
 
 export default function Catalog({ products, initialFilters, onEdit, onDelete, isAuthed }) {
   const [q, setQ] = useState('');
@@ -10,6 +11,7 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
   const [brand, setBrand] = useState('');
   const [month, setMonth] = useState('');
   const [selected, setSelected] = useState(null);
+  const { ref: controlsRef, hidden: controlsHidden, height: controlsHeight } = useHideOnScroll();
 
   useEffect(() => {
     if (initialFilters) {
@@ -99,7 +101,7 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
 
   return (
     <>
-      <div className="controls">
+      <div className={`controls${controlsHidden ? ' controls-hidden' : ''}`} ref={controlsRef}>
         <div className="controls-row">
           <div className="search-box">
             <input placeholder="Search by EAN, brand, category, model or description…" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -116,13 +118,15 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
             <option value="">All months</option>
             {months.map(m => <option key={m} value={m}>{formatMonthLabel(m)}</option>)}
           </select>
-          <button className="btn btn-rust icon-btn" onClick={resetFilters} title="Reset filters" aria-label="Reset filters"><ResetIcon /></button>
-          <button className="btn btn-teal icon-btn" onClick={downloadXlsx} title="Download filtered (.xlsx)" aria-label="Download filtered (.xlsx)"><DownloadIcon /></button>
+          <div className="icon-btn-group">
+            <button className="btn btn-rust icon-btn" onClick={resetFilters} title="Reset filters" aria-label="Reset filters"><ResetIcon /></button>
+            <button className="btn btn-teal icon-btn" onClick={downloadXlsx} title="Download filtered (.xlsx)" aria-label="Download filtered (.xlsx)"><DownloadIcon /></button>
+          </div>
         </div>
         <div className="result-count"><b>{filtered.length}</b> articles found</div>
       </div>
 
-      <main>
+      <main style={{ '--ctrl-h': `${controlsHeight}px` }}>
         {filtered.length === 0 ? (
           <div className="empty">
             <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 20, color: 'var(--ink)', fontWeight: 600, marginBottom: 8 }}>
