@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { fmtINR, uniqueSorted } from '../lib/helpers.js';
+import { ResetIcon, DownloadIcon } from './Icons.jsx';
 
 const SHEET_ORDER = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUNE'];
 
@@ -148,8 +149,8 @@ export default function Garments({ garments, initialFilters, onEdit, onDelete })
             <option value="">All months</option>
             {months.map(m => <option key={m} value={m}>{m}</option>)}
           </select>
-          <button className="btn btn-rust" onClick={resetFilters}>Reset filters</button>
-          <button className="btn btn-teal" onClick={downloadXlsx}>⬇ Download filtered (.xlsx)</button>
+          <button className="btn btn-rust icon-btn" onClick={resetFilters} title="Reset filters" aria-label="Reset filters"><ResetIcon /></button>
+          <button className="btn btn-teal icon-btn" onClick={downloadXlsx} title="Download filtered (.xlsx)" aria-label="Download filtered (.xlsx)"><DownloadIcon /></button>
         </div>
         <div className="result-count">
           <b>{filtered.length}</b> garment styles found <span style={{ opacity: 0.6 }}>({garments.length} total size/color SKUs)</span>

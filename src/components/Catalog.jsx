@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { fmtINR, discountPct, formatMonthLabel, normalizeMonthValue, uniqueSorted, monthOptions } from '../lib/helpers.js';
 import ProductModal from './ProductModal.jsx';
+import { ResetIcon, DownloadIcon } from './Icons.jsx';
 
 export default function Catalog({ products, initialFilters, onEdit, onDelete, isAuthed }) {
   const [q, setQ] = useState('');
@@ -115,8 +116,8 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
             <option value="">All months</option>
             {months.map(m => <option key={m} value={m}>{formatMonthLabel(m)}</option>)}
           </select>
-          <button className="btn btn-rust" onClick={resetFilters}>Reset filters</button>
-          <button className="btn btn-teal" onClick={downloadXlsx}>⬇ Download filtered (.xlsx)</button>
+          <button className="btn btn-rust icon-btn" onClick={resetFilters} title="Reset filters" aria-label="Reset filters"><ResetIcon /></button>
+          <button className="btn btn-teal icon-btn" onClick={downloadXlsx} title="Download filtered (.xlsx)" aria-label="Download filtered (.xlsx)"><DownloadIcon /></button>
         </div>
         <div className="result-count"><b>{filtered.length}</b> articles found</div>
       </div>
