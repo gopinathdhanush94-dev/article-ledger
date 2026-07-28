@@ -28,11 +28,13 @@ export default function ProductModal({ product: p, isAuthed, onClose, onEdit, on
   const off = discountPct(p.mrp, p.sp);
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState(null);
 
   useEffect(() => {
-    if (!isAuthed || !p?.id) { setHistory([]); return; }
+    if (!isAuthed || !p?.id) { setHistory([]); setHistoryError(null); return; }
     let cancelled = false;
     setHistoryLoading(true);
+    setHistoryError(null);
     supabase
       .from('product_field_changes')
       .select('*')
@@ -40,7 +42,8 @@ export default function ProductModal({ product: p, isAuthed, onClose, onEdit, on
       .order('changed_at', { ascending: false })
       .then(({ data, error }) => {
         if (cancelled) return;
-        setHistory(error ? [] : (data || []));
+        if (error) { setHistory([]); setHistoryError(error.message); }
+        else { setHistory(data || []); setHistoryError(null); }
         setHistoryLoading(false);
       });
     return () => { cancelled = true; };
@@ -106,6 +109,8 @@ export default function ProductModal({ product: p, isAuthed, onClose, onEdit, on
               <div style={{ fontSize: 12.5, color: 'var(--text-soft)' }}>Sign in to view price, quantity, and dimension change history.</div>
             ) : historyLoading ? (
               <div style={{ fontSize: 12.5, color: 'var(--text-soft)' }}>Loading history…</div>
+            ) : historyError ? (
+              <div style={{ fontSize: 12.5, color: 'var(--danger)' }}>Couldn't load change history: {historyError}</div>
             ) : history.length === 0 ? (
               <div style={{ fontSize: 12.5, color: 'var(--text-soft)' }}>No changes recorded yet — this is the original data.</div>
             ) : (
