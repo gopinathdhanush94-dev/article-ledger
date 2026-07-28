@@ -84,6 +84,20 @@ export default function AddProductForm({ products, editingProduct, onSaved, onCa
     return v === '' || v == null ? null : parseFloat(v);
   }
 
+  const REASON_FIELDS = [
+    { key: 'ean', label: 'EAN Code', getForm: () => (form.ean || '').trim() || null, getOriginal: () => editingProduct?.ean ?? null },
+    { key: 'hsn', label: 'HSN Code', getForm: () => form.hsn.trim() || null, getOriginal: () => editingProduct?.hsn ?? null },
+    { key: 'mrp', label: 'MRP', getForm: () => numOrNull(form.mrp), getOriginal: () => editingProduct?.mrp ?? null },
+    { key: 'sp', label: 'Selling Price', getForm: () => numOrNull(form.sp), getOriginal: () => editingProduct?.sp ?? null },
+    { key: 'master_qty', label: 'Master Ctn Qty', getForm: () => (form.master_qty === '' ? null : parseInt(form.master_qty, 10)), getOriginal: () => editingProduct?.master_qty ?? null },
+    { key: 'inner_qty', label: 'Inner Ctn Qty', getForm: () => (form.inner_qty === '' ? null : parseInt(form.inner_qty, 10)), getOriginal: () => editingProduct?.inner_qty ?? null },
+  ];
+
+  function getChangedReasonFields() {
+    if (!form.id || !editingProduct) return [];
+    return REASON_FIELDS.filter(f => f.getForm() !== f.getOriginal());
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setEanError('');
@@ -98,17 +112,38 @@ export default function AddProductForm({ products, editingProduct, onSaved, onCa
       return;
     }
 
+    const changedFields = getChangedReasonFields();
+
+    if (changedFields.length > 0) {
+      dialogs.promptDialog({
+        title: 'Reason for this change',
+        message: `You're changing: ${changedFields.map(f => f.label).join(', ')}. Please note why, for the record.`,
+        placeholder: 'e.g. Price correction from supplier, quantity recount, EAN was mistyped…',
+        confirmLabel: 'Continue',
+        onConfirm: (reasonText, { setError }) => {
+          const reason = (reasonText || '').trim();
+          if (!reason) { setError('Please enter a reason before continuing.'); return; }
+          dialogs.close();
+          confirmAndSave(ean, reason);
+        },
+      });
+    } else {
+      confirmAndSave(ean, null);
+    }
+  }
+
+  function confirmAndSave(ean, reason) {
     dialogs.confirmDialog({
       title: form.id ? 'Save changes to this article?' : 'Add this article?',
       message: form.id
         ? 'This will update the article with what you\'ve entered in the form.'
         : 'Double-check the form — once confirmed, this article is saved right away.',
       confirmLabel: form.id ? 'Save Changes' : 'Add Article',
-      onConfirm: () => performSave(ean),
+      onConfirm: () => performSave(ean, reason),
     });
   }
 
-  async function performSave(ean) {
+  async function performSave(ean, reason) {
     setSaving(true);
     try {
       let imageUrl = form.image_url;
@@ -142,6 +177,7 @@ export default function AddProductForm({ products, editingProduct, onSaved, onCa
         inner_dim_unit: form.inner_dim_unit, inner_nw: numOrNull(form.inner_nw), inner_gw: numOrNull(form.inner_gw), inner_wt_unit: form.inner_wt_unit,
         image_url: imageUrl,
         custom: true,
+        pending_change_reason: reason || null,
       };
 
       if (form.id) {

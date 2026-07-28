@@ -12,6 +12,7 @@ function wt(nw, gw, unit) {
 }
 
 const FIELD_LABELS = {
+  ean: 'EAN Code', hsn: 'HSN Code',
   mrp: 'MRP', sp: 'Selling Price',
   master_qty: 'Master Ctn Qty', inner_qty: 'Inner Ctn Qty',
   master_l: 'Master Length', master_w: 'Master Width', master_h: 'Master Height', master_dim_unit: 'Master Dim Unit',
@@ -114,12 +115,13 @@ export default function ProductModal({ product: p, isAuthed, onClose, onEdit, on
             ) : history.length === 0 ? (
               <div style={{ fontSize: 12.5, color: 'var(--text-soft)' }}>No changes recorded yet — this is the original data.</div>
             ) : (
-              <div style={{ maxHeight: 200, overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 8 }}>
+              <div style={{ maxHeight: 220, overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 8 }}>
                 <table className="detail-table" style={{ marginBottom: 0, fontSize: 12 }}>
                   <thead>
                     <tr style={{ borderBottom: '1.5px solid var(--border-strong)' }}>
                       <td style={{ fontWeight: 700 }}>Field</td>
                       <td style={{ fontWeight: 700 }}>Old → New</td>
+                      <td style={{ fontWeight: 700 }}>Reason</td>
                       <td style={{ fontWeight: 700 }}>By</td>
                       <td style={{ fontWeight: 700 }}>When</td>
                     </tr>
@@ -129,6 +131,7 @@ export default function ProductModal({ product: p, isAuthed, onClose, onEdit, on
                       <tr key={h.id}>
                         <td>{FIELD_LABELS[h.field_name] || h.field_name}</td>
                         <td>{h.old_value ?? '—'} → {h.new_value ?? '—'}</td>
+                        <td>{h.reason || '—'}</td>
                         <td>{h.changed_by_email || 'Bulk import/script'}</td>
                         <td>{formatWhen(h.changed_at)}</td>
                       </tr>
