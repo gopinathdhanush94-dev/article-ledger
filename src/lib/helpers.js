@@ -17,7 +17,7 @@ export function monthSortKey(raw) {
   if (!raw) return Infinity;
   const s = String(raw).trim().toLowerCase();
 
-  let m = s.match(/([a-z]{3,4})[\s\-_]?(\d{2,4})(?!\d)/);
+  let m = s.match(/^([a-z]{3,4})[\s\-_]?(\d{2,4})(?!\d)/);
   if (m && MONTH_ABBR_TO_NUM[m[1]]) {
     const mon = MONTH_ABBR_TO_NUM[m[1]];
     const yrPart = m[2].length === 4 ? parseInt(m[2], 10) : 2000 + parseInt(m[2], 10);
@@ -39,7 +39,7 @@ const MONTH_NUM_TO_ABBR = {1:'JAN',2:'FEB',3:'MAR',4:'APR',5:'MAY',6:'JUN',7:'JU
 export function normalizeMonthValue(raw) {
   if (!raw) return null;
   const s = String(raw).trim();
-  const m = s.toLowerCase().match(/([a-z]{3,4})[\s\-_]?(\d{2,4})(?!\d)/);
+  const m = s.toLowerCase().match(/^([a-z]{3,4})[\s\-_]?(\d{2,4})(?!\d)/);
   if (m && MONTH_ABBR_TO_NUM[m[1]]) {
     const mon = MONTH_ABBR_TO_NUM[m[1]];
     const yy = m[2].length === 4 ? m[2].slice(2) : m[2].padStart(2, '0');
@@ -55,7 +55,7 @@ export function normalizeMonthValue(raw) {
 export function formatMonthLabel(raw) {
   if (!raw) return '—';
   const s = String(raw).trim();
-  const m = s.toLowerCase().match(/([a-z]{3,4})[\s\-_]?(\d{2,4})(?!\d)/);
+  const m = s.toLowerCase().match(/^([a-z]{3,4})[\s\-_]?(\d{2,4})(?!\d)/);
   if (m && MONTH_ABBR_TO_NUM[m[1]]) {
     const mon = MONTH_ABBR_TO_NUM[m[1]];
     const yr = m[2].length === 4 ? parseInt(m[2], 10) : 2000 + parseInt(m[2], 10);
