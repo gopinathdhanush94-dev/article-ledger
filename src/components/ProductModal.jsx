@@ -115,29 +115,33 @@ export default function ProductModal({ product: p, isAuthed, onClose, onEdit, on
             ) : history.length === 0 ? (
               <div style={{ fontSize: 12.5, color: 'var(--text-soft)' }}>No changes recorded yet — this is the original data.</div>
             ) : (
-              <div style={{ maxHeight: 220, overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 8 }}>
-                <table className="detail-table" style={{ marginBottom: 0, fontSize: 12 }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1.5px solid var(--border-strong)' }}>
-                      <td style={{ fontWeight: 700 }}>Field</td>
-                      <td style={{ fontWeight: 700 }}>Old → New</td>
-                      <td style={{ fontWeight: 700 }}>Reason</td>
-                      <td style={{ fontWeight: 700 }}>By</td>
-                      <td style={{ fontWeight: 700 }}>When</td>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {history.map(h => (
-                      <tr key={h.id}>
-                        <td>{FIELD_LABELS[h.field_name] || h.field_name}</td>
-                        <td>{h.old_value ?? '—'} → {h.new_value ?? '—'}</td>
-                        <td>{h.reason || '—'}</td>
-                        <td>{h.changed_by_email || 'Bulk import/script'}</td>
-                        <td>{formatWhen(h.changed_at)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div style={{ maxHeight: 260, overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 8 }}>
+                {history.map((h, i) => (
+                  <div
+                    key={h.id}
+                    style={{
+                      padding: '10px 14px',
+                      borderBottom: i < history.length - 1 ? '1px solid var(--border)' : 'none',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, marginBottom: 3 }}>
+                      <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 12.5, color: 'var(--text)' }}>
+                        {FIELD_LABELS[h.field_name] || h.field_name}
+                      </span>
+                      <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11.5, color: 'var(--text-soft)', whiteSpace: 'nowrap' }}>
+                        {h.old_value ?? '—'} → {h.new_value ?? '—'}
+                      </span>
+                    </div>
+                    {h.reason && (
+                      <div style={{ fontSize: 12, color: 'var(--text)', marginBottom: 4, lineHeight: 1.4 }}>
+                        {h.reason}
+                      </div>
+                    )}
+                    <div style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>
+                      {h.changed_by_email || 'Bulk import/script'} · {formatWhen(h.changed_at)}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
