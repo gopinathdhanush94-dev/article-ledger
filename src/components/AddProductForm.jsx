@@ -93,9 +93,21 @@ export default function AddProductForm({ products, editingProduct, onSaved, onCa
     { key: 'inner_qty', label: 'Inner Ctn Qty', getForm: () => (form.inner_qty === '' ? null : parseInt(form.inner_qty, 10)), getOriginal: () => editingProduct?.inner_qty ?? null },
   ];
 
+  // Numeric database columns (mrp, sp) come back from Supabase as strings, while
+  // the form always produces numbers — a plain !== would treat those as "changed"
+  // (or fail to notice a real change) purely due to type, not value. Compare the
+  // numeric value when both sides parse as numbers; otherwise compare as text.
+  function valuesEqual(a, b) {
+    if (a === null && b === null) return true;
+    if (a === null || b === null) return false;
+    const na = Number(a), nb = Number(b);
+    if (!isNaN(na) && !isNaN(nb)) return na === nb;
+    return String(a) === String(b);
+  }
+
   function getChangedReasonFields() {
     if (!form.id || !editingProduct) return [];
-    return REASON_FIELDS.filter(f => f.getForm() !== f.getOriginal());
+    return REASON_FIELDS.filter(f => !valuesEqual(f.getForm(), f.getOriginal()));
   }
 
   async function handleSubmit(e) {
