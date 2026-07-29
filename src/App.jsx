@@ -2,6 +2,8 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from './supabaseClient.js';
 import { useAuth } from './lib/useAuth.js';
 import { DialogProvider, useDialogs } from './components/Dialogs.jsx';
+import { ToastProvider, useToast } from './components/Toast.jsx';
+import CardGridSkeleton from './components/Skeleton.jsx';
 import LoginModal from './components/LoginModal.jsx';
 import Home from './components/Home.jsx';
 import Catalog from './components/Catalog.jsx';
@@ -23,6 +25,7 @@ const BrandIconSVG = () => (
 
 function AppInner() {
   const { isAuthed, signIn, signOut } = useAuth();
+  const { showToast } = useToast();
   const dialogs = useDialogs();
 
   const [view, setViewState] = useState('home');
@@ -167,17 +170,18 @@ function AppInner() {
         danger: true,
         onConfirm: async () => {
           const { error } = await supabase.from('products').delete().eq('id', product.id);
-          if (error) dialogs.alertDialog({ title: 'Could not delete', message: error.message });
-          else loadProducts();
+          if (error) { dialogs.alertDialog({ title: 'Could not delete', message: error.message }); showToast('Could not delete article', 'error'); }
+          else { loadProducts(); showToast('Article deleted'); }
         },
       });
     });
   }
 
-  function handleProductSaved() {
+  function handleProductSaved(wasEditing) {
     setEditingProduct(null);
     navigate('catalog');
     loadProducts();
+    showToast(wasEditing ? 'Changes saved' : 'Article added');
   }
 
   function openEditGarment(group) {
@@ -194,17 +198,18 @@ function AppInner() {
         onConfirm: async () => {
           const ids = group.sizes.map(s => s.id);
           const { error } = await supabase.from('garments').delete().in('id', ids);
-          if (error) dialogs.alertDialog({ title: 'Could not delete', message: error.message });
-          else loadGarments();
+          if (error) { dialogs.alertDialog({ title: 'Could not delete', message: error.message }); showToast('Could not delete garment', 'error'); }
+          else { loadGarments(); showToast('Garment deleted'); }
         },
       });
     });
   }
 
-  function handleGarmentSaved() {
+  function handleGarmentSaved(wasEditing) {
     setEditingGarmentGroup(null);
     navigate('garments');
     loadGarments();
+    showToast(wasEditing ? 'Changes saved' : 'Garment style added');
   }
 
   return (
@@ -238,9 +243,7 @@ function AppInner() {
       </header>
 
       {dataLoading && !hasLoadedOnce && (
-        <div style={{ padding: 60, textAlign: 'center', fontFamily: "'Inter',sans-serif", color: 'var(--ink-soft)' }}>
-          Loading catalog…
-        </div>
+        <main><CardGridSkeleton /></main>
       )}
 
       {dataError && !hasLoadedOnce && (
@@ -281,9 +284,7 @@ function AppInner() {
           </div>
           <div style={{ display: view === 'garments' ? 'block' : 'none' }}>
             {garmentsLoading && !garmentsHasLoadedOnce && (
-              <div style={{ padding: 60, textAlign: 'center', fontFamily: "'Inter',sans-serif", color: 'var(--ink-soft)' }}>
-                Loading garments…
-              </div>
+              <main><CardGridSkeleton /></main>
             )}
             {garmentsError && !garmentsHasLoadedOnce && (
               <div style={{ padding: 40, textAlign: 'center', fontFamily: "'Inter',sans-serif", color: 'var(--danger)' }}>
@@ -333,7 +334,9 @@ function AppInner() {
 export default function App() {
   return (
     <DialogProvider>
-      <AppInner />
+      <ToastProvider>
+        <AppInner />
+      </ToastProvider>
     </DialogProvider>
   );
 }

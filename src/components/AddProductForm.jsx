@@ -195,12 +195,12 @@ export default function AddProductForm({ products, editingProduct, onSaved, onCa
       if (form.id) {
         const { error } = await supabase.from('products').update(row).eq('id', form.id);
         if (error) throw error;
+        onSaved(true);
       } else {
         const { error } = await supabase.from('products').insert(row);
         if (error) throw error;
+        onSaved(false);
       }
-
-      onSaved();
     } catch (err) {
       dialogs.alertDialog({ title: 'Could not save article', message: err.message || String(err) });
     } finally {
