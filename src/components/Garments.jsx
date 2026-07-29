@@ -47,7 +47,7 @@ export default function Garments({ garments, initialFilters, onEdit, onDelete })
   const [modelName, setModelName] = useState('');
   const [month, setMonth] = useState('');
   const [selected, setSelected] = useState(null);
-  const { ref: controlsRef, hidden: controlsHidden, height: controlsHeight } = useHideOnScroll();
+  const controlsHidden = useHideOnScroll();
 
   useEffect(() => {
     if (initialFilters) {
@@ -130,7 +130,7 @@ export default function Garments({ garments, initialFilters, onEdit, onDelete })
 
   return (
     <>
-      <div className={`controls${controlsHidden ? ' controls-hidden' : ''}`} ref={controlsRef}>
+      <div className={`controls${controlsHidden ? ' controls-hidden' : ''}`}>
         <div className="controls-row">
           <div className="search-box">
             <input
@@ -161,7 +161,7 @@ export default function Garments({ garments, initialFilters, onEdit, onDelete })
         </div>
       </div>
 
-      <main style={{ '--ctrl-h': `${controlsHeight}px` }}>
+      <main>
         {filtered.length === 0 ? (
           <div className="empty">
             <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 20, color: 'var(--ink)', fontWeight: 600, marginBottom: 8 }}>

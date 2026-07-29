@@ -11,7 +11,7 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
   const [brand, setBrand] = useState('');
   const [month, setMonth] = useState('');
   const [selected, setSelected] = useState(null);
-  const { ref: controlsRef, hidden: controlsHidden, height: controlsHeight } = useHideOnScroll();
+  const controlsHidden = useHideOnScroll();
 
   useEffect(() => {
     if (initialFilters) {
@@ -101,7 +101,7 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
 
   return (
     <>
-      <div className={`controls${controlsHidden ? ' controls-hidden' : ''}`} ref={controlsRef}>
+      <div className={`controls${controlsHidden ? ' controls-hidden' : ''}`}>
         <div className="controls-row">
           <div className="search-box">
             <input placeholder="Search by EAN, brand, category, model or description…" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -126,7 +126,7 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
         <div className="result-count"><b>{filtered.length}</b> articles found</div>
       </div>
 
-      <main style={{ '--ctrl-h': `${controlsHeight}px` }}>
+      <main>
         {filtered.length === 0 ? (
           <div className="empty">
             <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 20, color: 'var(--ink)', fontWeight: 600, marginBottom: 8 }}>
