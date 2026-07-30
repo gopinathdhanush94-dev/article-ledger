@@ -18,7 +18,7 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
       setCat(initialFilters.category || '');
       setBrand(initialFilters.brand || '');
       setMonth(initialFilters.month || '');
-      setQ('');
+      setQ(initialFilters.search || '');
     }
   }, [initialFilters]);
 

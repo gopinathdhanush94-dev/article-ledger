@@ -49,13 +49,63 @@ export default function AddProductForm({ products, editingProduct, onSaved, onCa
     setForm(f => ({ ...f, [field]: val }));
   }
 
-  function handleImageChange(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+  function setImageFromFile(file) {
+    if (!file || !file.type.startsWith('image/')) return;
     setImageFile(file);
     const reader = new FileReader();
     reader.onload = () => setImagePreview(reader.result);
     reader.readAsDataURL(file);
+  }
+
+  function handleImageChange(e) {
+    const file = e.target.files[0];
+    setImageFromFile(file);
+  }
+
+  const [dragActive, setDragActive] = useState(false);
+
+  function handleDragOver(e) {
+    e.preventDefault();
+    setDragActive(true);
+  }
+  function handleDragLeave(e) {
+    e.preventDefault();
+    setDragActive(false);
+  }
+
+  async function handleDrop(e) {
+    e.preventDefault();
+    setDragActive(false);
+
+    // Dropped straight from a local folder / the desktop.
+    const file = e.dataTransfer.files?.[0];
+    if (file) { setImageFromFile(file); return; }
+
+    // Dropped from a webpage (an <img> dragged out of a browser tab) — the
+    // browser gives us the image's URL, not the file itself, so fetch it.
+    const html = e.dataTransfer.getData('text/html');
+    const uriList = e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('URL');
+    let url = uriList;
+    if (!url && html) {
+      const match = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+      if (match) url = match[1];
+    }
+    if (!url) return;
+
+    try {
+      const res = await fetch(url, { mode: 'cors' });
+      if (!res.ok) throw new Error('Could not fetch that image');
+      const blob = await res.blob();
+      if (!blob.type.startsWith('image/')) throw new Error('That link is not an image');
+      const filename = url.split('/').pop().split('?')[0] || 'dropped-image.jpg';
+      const file = new File([blob], filename, { type: blob.type });
+      setImageFromFile(file);
+    } catch (err) {
+      dialogs.alertDialog({
+        title: 'Could not use that image',
+        message: 'That website blocks other sites from copying its images directly. Save the image to your computer first (right-click → Save Image As), then drag the saved file in instead.',
+      });
+    }
   }
 
   function openAddNewDialog(field, label) {
@@ -318,13 +368,18 @@ export default function AddProductForm({ products, editingProduct, onSaved, onCa
           <div className="form-grid">
             <div className="field full">
               <label>Product Image</label>
-              <div className="img-drop">
+              <div
+                className={`img-drop${dragActive ? ' img-drop-active' : ''}`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
                 <div className="preview">
                   {imagePreview ? <img src={imagePreview} alt="" /> : <span style={{ fontSize: 9, fontFamily: "'Inter',sans-serif", color: '#A79E85' }}>NO IMAGE</span>}
                 </div>
                 <div>
                   <input type="file" accept="image/*" onChange={handleImageChange} />
-                  <div className="hint">JPG or PNG. Uploaded to Supabase Storage on save.</div>
+                  <div className="hint">JPG or PNG. Drag a file from your computer, or drag an image straight from a website. Uploaded to Supabase Storage on save.</div>
                 </div>
               </div>
             </div>

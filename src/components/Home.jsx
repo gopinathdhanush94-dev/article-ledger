@@ -4,6 +4,9 @@ import { formatMonthLabel, normalizeMonthValue, monthSortKey, categoryIcon, garm
 export default function Home({ products, garments, onGoToCatalog, onGoToGarments }) {
   const [catQuery, setCatQuery] = useState('');
   const [styleQuery, setStyleQuery] = useState('');
+  const [productsView, setProductsView] = useState('categories'); // 'categories' | 'products' | 'brands'
+  const [productSearchQuery, setProductSearchQuery] = useState('');
+  const [brandQuery, setBrandQuery] = useState('');
   const [animate, setAnimate] = useState(false);
   useEffect(() => { const t = setTimeout(() => setAnimate(true), 30); return () => clearTimeout(t); }, [products, garments]);
 
@@ -19,6 +22,25 @@ export default function Home({ products, garments, onGoToCatalog, onGoToGarments
   const filteredCats = catQuery
     ? catCounts.filter(([name]) => name.toLowerCase().includes(catQuery.trim().toLowerCase()))
     : catCounts;
+
+  const brandCounts = useMemo(() => {
+    const c = {};
+    products.forEach(p => { c[p.brand] = (c[p.brand] || 0) + 1; });
+    return Object.entries(c).sort((a, b) => b[1] - a[1]);
+  }, [products]);
+
+  const filteredBrands = brandQuery
+    ? brandCounts.filter(([name]) => (name || '').toLowerCase().includes(brandQuery.trim().toLowerCase()))
+    : brandCounts;
+
+  const filteredAllProducts = useMemo(() => {
+    const q = productSearchQuery.trim().toLowerCase();
+    if (!q) return products.slice(0, 100);
+    return products.filter(p => {
+      const hay = [p.description, p.brand, p.category, p.ean, p.model, p.article_no, p.hsn].filter(Boolean).join(' ').toLowerCase();
+      return hay.includes(q);
+    }).slice(0, 200);
+  }, [products, productSearchQuery]);
 
   const monthCounts = useMemo(() => {
     const c = {};
@@ -62,34 +84,111 @@ export default function Home({ products, garments, onGoToCatalog, onGoToGarments
       </div>
 
       <div className="stat-cards">
-        <div className="stat-card"><div className="num">{products.length}</div><div className="lbl">Total Products</div></div>
-        <div className="stat-card teal"><div className="num">{categories.length}</div><div className="lbl">Categories</div></div>
-        <div className="stat-card"><div className="num">{brands.length}</div><div className="lbl">Brands</div></div>
+        <div className={`stat-card stat-card-clickable${productsView === 'products' ? ' active' : ''}`} onClick={() => setProductsView('products')}>
+          <div className="num">{products.length}</div><div className="lbl">Total Products</div>
+        </div>
+        <div className={`stat-card teal stat-card-clickable${productsView === 'categories' ? ' active' : ''}`} onClick={() => setProductsView('categories')}>
+          <div className="num">{categories.length}</div><div className="lbl">Categories</div>
+        </div>
+        <div className={`stat-card stat-card-clickable${productsView === 'brands' ? ' active' : ''}`} onClick={() => setProductsView('brands')}>
+          <div className="num">{brands.length}</div><div className="lbl">Brands</div>
+        </div>
       </div>
 
-      <div className="panel">
-        <h3>Categories <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 10.5, color: 'var(--ink-soft)', fontWeight: 500 }}>{catCounts.length} categories</span></h3>
-        <div className="panel-hint">Search or click a category to view its articles</div>
-        <div className="cat-search-box">
-          <input placeholder="Search categories…" value={catQuery} onChange={(e) => setCatQuery(e.target.value)} />
+      {productsView === 'categories' && (
+        <div className="panel">
+          <h3>Categories <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 10.5, color: 'var(--ink-soft)', fontWeight: 500 }}>{catCounts.length} categories</span></h3>
+          <div className="panel-hint">Search or click a category to view its articles</div>
+          <div className="cat-search-box">
+            <input placeholder="Search categories…" value={catQuery} onChange={(e) => setCatQuery(e.target.value)} />
+          </div>
+          {filteredCats.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '30px 10px', fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'var(--ink-soft)' }}>
+              No categories match your search.
+            </div>
+          ) : (
+            <div className="cat-tile-grid">
+              {filteredCats.map(([name, count]) => (
+                <div key={name} className="cat-tile" onClick={() => onGoToCatalog({ category: name })}>
+                  <div className="icon">{categoryIcon(name)}</div>
+                  <div className="name" title={name}>{name}</div>
+                  <div className="count">{count}</div>
+                  <div className="count-lbl">articles</div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        {filteredCats.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '30px 10px', fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'var(--ink-soft)' }}>
-            No categories match your search.
+      )}
+
+      {productsView === 'brands' && (
+        <div className="panel">
+          <h3>Brands <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 10.5, color: 'var(--ink-soft)', fontWeight: 500 }}>{brandCounts.length} brands</span></h3>
+          <div className="panel-hint">Search or click a brand to view its articles</div>
+          <div className="cat-search-box">
+            <input placeholder="Search brands…" value={brandQuery} onChange={(e) => setBrandQuery(e.target.value)} />
           </div>
-        ) : (
-          <div className="cat-tile-grid">
-            {filteredCats.map(([name, count]) => (
-              <div key={name} className="cat-tile" onClick={() => onGoToCatalog({ category: name })}>
-                <div className="icon">{categoryIcon(name)}</div>
-                <div className="name" title={name}>{name}</div>
-                <div className="count">{count}</div>
-                <div className="count-lbl">articles</div>
-              </div>
-            ))}
+          {filteredBrands.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '30px 10px', fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'var(--ink-soft)' }}>
+              No brands match your search.
+            </div>
+          ) : (
+            <div style={{ maxHeight: 420, overflowY: 'auto' }}>
+              {filteredBrands.map(([b, count], i) => (
+                <div key={b} className="bar-row" onClick={() => onGoToCatalog({ brand: b })}>
+                  <div className="bar-rank">{i + 1}</div>
+                  <div className="bar-label" title={b}>{b}</div>
+                  <div className="bar-track">
+                    <div className="bar-fill" style={{ width: animate ? `${(count / (brandCounts[0]?.[1] || 1) * 100).toFixed(0)}%` : '0%' }} />
+                  </div>
+                  <div className="bar-num">{count}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {productsView === 'products' && (
+        <div className="panel">
+          <h3>All Products <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 10.5, color: 'var(--ink-soft)', fontWeight: 500 }}>{products.length} total</span></h3>
+          <div className="panel-hint">Search, or click any product to open it in the catalog</div>
+          <div className="cat-search-box">
+            <input placeholder="Search by EAN, brand, category, model or description…" value={productSearchQuery} onChange={(e) => setProductSearchQuery(e.target.value)} />
           </div>
-        )}
-      </div>
+          {!productSearchQuery && (
+            <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: 'var(--text-muted)', marginBottom: 10 }}>
+              Showing the first 100 of {products.length} — type to search all of them.
+            </div>
+          )}
+          {filteredAllProducts.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '30px 10px', fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'var(--ink-soft)' }}>
+              No products match your search.
+            </div>
+          ) : (
+            <div style={{ maxHeight: 460, overflowY: 'auto' }}>
+              {filteredAllProducts.map(p => (
+                <div
+                  key={p.id}
+                  className="bar-row"
+                  style={{ justifyContent: 'space-between' }}
+                  onClick={() => onGoToCatalog({ search: p.ean || p.description })}
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                    <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {p.description || p.model || 'Unnamed article'}
+                    </span>
+                    <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: 'var(--text-soft)' }}>{p.brand} · {p.category}</span>
+                  </div>
+                  <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 13, color: 'var(--primary)', flex: 'none', marginLeft: 10 }}>
+                    {p.sp != null ? `₹${p.sp}` : p.mrp != null ? `₹${p.mrp}` : ''}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="panel">
         <h3>Articles by Month <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 10.5, color: 'var(--ink-soft)', fontWeight: 500 }}>{monthCounts.length} months</span></h3>
