@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
-import { fmtINR, uniqueSorted } from '../lib/helpers.js';
+import { fmtINR, uniqueSorted, extractYear } from '../lib/helpers.js';
 import { ResetIcon, DownloadIcon } from './Icons.jsx';
 import { useHideOnScroll } from '../lib/useHideOnScroll.js';
 
@@ -31,6 +31,7 @@ function groupGarments(rows) {
         mrp: r.mrp,
         rrp: r.rrp,
         source_file: r.source_file,
+        year: extractYear(r.source_file) || extractYear(r.moi) || extractYear(r.mfd),
         sizes: [],
       });
     }
@@ -46,6 +47,7 @@ export default function Garments({ garments, initialFilters, onEdit, onDelete })
   const [brand, setBrand] = useState('');
   const [modelName, setModelName] = useState('');
   const [month, setMonth] = useState('');
+  const [year, setYear] = useState('');
   const [selected, setSelected] = useState(null);
   const controlsHidden = useHideOnScroll();
 
@@ -54,24 +56,62 @@ export default function Garments({ garments, initialFilters, onEdit, onDelete })
       setBrand(initialFilters.brand || '');
       setModelName(initialFilters.modelName || '');
       setMonth(initialFilters.month || '');
+      setYear(initialFilters.year || '');
       setQ(initialFilters.search || '');
     }
   }, [initialFilters]);
 
-  const brands = uniqueSorted(garments, 'brand');
-  const modelNames = uniqueSorted(garments, 'model_name');
-  const months = [...new Set([...SHEET_ORDER, ...uniqueSorted(garments, 'sheet')])]
-    .filter(m => garments.some(g => g.sheet === m))
-    .reverse();
-
   const grouped = useMemo(() => groupGarments(garments), [garments]);
+
+  // Every garment filter is dependent on the other active filters.
+  // Year is derived from the garment source/import year (for example
+  // source_file = 2026_LIVESMEART), while Month comes from the sheet.
+  const rowsForFilter = (exclude) => grouped.filter(g => {
+    if (exclude !== 'brand' && brand && g.brand !== brand) return false;
+    if (exclude !== 'modelName' && modelName && g.model_name !== modelName) return false;
+    if (exclude !== 'month' && month && String(g.sheet || '').toUpperCase() !== month) return false;
+    if (exclude !== 'year' && year && g.year !== year) return false;
+    return true;
+  });
+
+  const brands = uniqueSorted(rowsForFilter('brand'), 'brand');
+  const modelNames = uniqueSorted(rowsForFilter('modelName'), 'model_name');
+  const months = [...new Set(rowsForFilter('month').map(g => String(g.sheet || '').toUpperCase()).filter(Boolean))]
+    .sort((a, b) => {
+      const ai = SHEET_ORDER.indexOf(a), bi = SHEET_ORDER.indexOf(b);
+      if (ai !== -1 && bi !== -1) return ai - bi;
+      if (ai !== -1) return -1;
+      if (bi !== -1) return 1;
+      return a.localeCompare(b);
+    });
+  const years = [...new Set(rowsForFilter('year').map(g => g.year).filter(Boolean))]
+    .sort((a, b) => String(b).localeCompare(String(a)));
+
+  // If another filter makes an existing selection unavailable, clear only
+  // that invalid selection. The remaining dropdowns then recalculate.
+  useEffect(() => {
+    if (brand && !brands.includes(brand)) setBrand('');
+  }, [brand, brands.join('|')]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (modelName && !modelNames.includes(modelName)) setModelName('');
+  }, [modelName, modelNames.join('|')]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (month && !months.includes(month)) setMonth('');
+  }, [month, months.join('|')]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (year && !years.includes(year)) setYear('');
+  }, [year, years.join('|')]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase();
     return grouped.filter(g => {
       if (brand && g.brand !== brand) return false;
       if (modelName && g.model_name !== modelName) return false;
-      if (month && g.sheet !== month) return false;
+      if (month && String(g.sheet || '').toUpperCase() !== month) return false;
+      if (year && g.year !== year) return false;
       if (query) {
         const hay = [
           g.excel_name, g.model_name, g.brand, g.color, g.customer_model, g.model1,
@@ -81,7 +121,7 @@ export default function Garments({ garments, initialFilters, onEdit, onDelete })
       }
       return true;
     });
-  }, [grouped, q, brand, modelName, month]);
+  }, [grouped, q, brand, modelName, month, year]);
 
   useEffect(() => {
     if (!selected) return;
@@ -104,7 +144,7 @@ export default function Garments({ garments, initialFilters, onEdit, onDelete })
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [selected, filtered]);
 
-  function resetFilters() { setQ(''); setBrand(''); setModelName(''); setMonth(''); }
+  function resetFilters() { setQ(''); setBrand(''); setModelName(''); setMonth(''); setYear(''); }
 
   function downloadXlsx() {
     const headers = ['Source', 'Month', 'Style Name', 'Garment Type', 'Brand', 'Color', 'Customer Model', 'Internal Model',
@@ -150,6 +190,10 @@ export default function Garments({ garments, initialFilters, onEdit, onDelete })
           <select value={month} onChange={(e) => setMonth(e.target.value)}>
             <option value="">All months</option>
             {months.map(m => <option key={m} value={m}>{m}</option>)}
+          </select>
+          <select value={year} onChange={(e) => setYear(e.target.value)}>
+            <option value="">All years</option>
+            {years.map(y => <option key={y} value={y}>{y}</option>)}
           </select>
           <div className="icon-btn-group">
             <button className="btn btn-rust icon-btn" onClick={resetFilters} title="Reset filters" aria-label="Reset filters"><ResetIcon /></button>
