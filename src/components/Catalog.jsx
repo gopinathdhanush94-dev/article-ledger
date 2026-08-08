@@ -26,42 +26,16 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
     }
   }, [initialFilters]);
 
-  // Build each dropdown from the rows matching the OTHER active filters.
-  // This makes the filters dependent in every direction:
-  // - selecting a month limits year/category/brand to that month
-  // - selecting a year limits month/category/brand to that year
-  // - selecting a category or brand also limits the remaining filters.
-  // The current dropdown's own value is intentionally excluded when building
-  // its option list, so changing one filter never hides its currently selected value.
-  const rowsForFilterOptions = (exclude) => products.filter(p => {
-    if (exclude !== 'category' && cat && p.category !== cat) return false;
-    if (exclude !== 'brand' && brand && p.brand !== brand) return false;
-    if (exclude !== 'month' && month && normalizeMonthValue(p.month) !== month) return false;
-    if (exclude !== 'year' && year && extractYear(p.month) !== year) return false;
-    return true;
-  });
+  const categories = uniqueSorted(products, 'category');
+  const brands = uniqueSorted(products, 'brand');
+  const months = monthOptions(products);
+  const years = yearOptions(products);
 
-  const categories = uniqueSorted(rowsForFilterOptions('category'), 'category');
-  const brands = uniqueSorted(rowsForFilterOptions('brand'), 'brand');
-  const months = monthOptions(rowsForFilterOptions('month'));
-  const years = yearOptions(rowsForFilterOptions('year'));
+  const brandsForCat = cat ? uniqueSorted(products.filter(p => p.category === cat), 'brand') : brands;
+  const catsForBrand = brand ? uniqueSorted(products.filter(p => p.brand === brand), 'category') : categories;
 
-  // Clear a selection if another filter makes it genuinely unavailable.
-  useEffect(() => {
-    if (cat && !categories.includes(cat)) setCat('');
-  }, [cat, categories.join('\u0001')]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (brand && !brands.includes(brand)) setBrand('');
-  }, [brand, brands.join('\u0001')]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (month && !months.includes(month)) setMonth('');
-  }, [month, months.join('\u0001')]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (year && !years.includes(year)) setYear('');
-  }, [year, years.join('\u0001')]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (cat && !catsForBrand.includes(cat)) setCat(''); }, [brand]); // eslint-disable-line
+  useEffect(() => { if (brand && !brandsForCat.includes(brand)) setBrand(''); }, [cat]); // eslint-disable-line
 
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase();
@@ -147,7 +121,7 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
           </div>
           <select value={cat} onChange={(e) => setCat(e.target.value)}>
             <option value="">All categories</option>
-            {categories.map(c => <option key={c} value={c}>{c}</option>)}
+            {catsForBrand.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
           <select value={brand} onChange={(e) => setBrand(e.target.value)}>
             <option value="">All brands</option>
