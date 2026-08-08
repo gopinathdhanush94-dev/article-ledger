@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
-import { fmtINR, discountPct, formatMonthLabel, normalizeMonthValue, uniqueSorted, monthOptions } from '../lib/helpers.js';
+import { fmtINR, discountPct, formatMonthLabel, normalizeMonthValue, extractYear, yearOptions, uniqueSorted, monthOptions } from '../lib/helpers.js';
 import ProductModal from './ProductModal.jsx';
 import { ResetIcon, DownloadIcon } from './Icons.jsx';
 import { useHideOnScroll } from '../lib/useHideOnScroll.js';
@@ -10,7 +10,9 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
   const [cat, setCat] = useState('');
   const [brand, setBrand] = useState('');
   const [month, setMonth] = useState('');
+  const [year, setYear] = useState('');
   const [selected, setSelected] = useState(null);
+  const [autoOpenPending, setAutoOpenPending] = useState(false);
   const controlsHidden = useHideOnScroll();
 
   useEffect(() => {
@@ -18,13 +20,16 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
       setCat(initialFilters.category || '');
       setBrand(initialFilters.brand || '');
       setMonth(initialFilters.month || '');
+      setYear(initialFilters.year || '');
       setQ(initialFilters.search || '');
+      setAutoOpenPending(!!initialFilters.autoOpen);
     }
   }, [initialFilters]);
 
   const categories = uniqueSorted(products, 'category');
   const brands = uniqueSorted(products, 'brand');
   const months = monthOptions(products);
+  const years = yearOptions(products);
 
   const brandsForCat = cat ? uniqueSorted(products.filter(p => p.category === cat), 'brand') : brands;
   const catsForBrand = brand ? uniqueSorted(products.filter(p => p.brand === brand), 'category') : categories;
@@ -38,6 +43,7 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
       if (cat && p.category !== cat) return false;
       if (brand && p.brand !== brand) return false;
       if (month && normalizeMonthValue(p.month) !== month) return false;
+      if (year && extractYear(p.month) !== year) return false;
       if (query) {
         const hay = [p.ean, p.brand, p.category, p.description, p.model, p.article_no, p.hsn]
           .filter(Boolean).join(' ').toLowerCase();
@@ -45,7 +51,14 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
       }
       return true;
     });
-  }, [products, q, cat, brand, month]);
+  }, [products, q, cat, brand, month, year]);
+
+  useEffect(() => {
+    if (autoOpenPending && filtered.length >= 1) {
+      setSelected(filtered[0]);
+      setAutoOpenPending(false);
+    }
+  }, [autoOpenPending, filtered]);
 
   useEffect(() => {
     if (!selected) return;
@@ -70,7 +83,7 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
   }, [selected, filtered]);
 
   function resetFilters() {
-    setQ(''); setCat(''); setBrand(''); setMonth('');
+    setQ(''); setCat(''); setBrand(''); setMonth(''); setYear('');
   }
 
   function downloadXlsx() {
@@ -117,6 +130,10 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
           <select value={month} onChange={(e) => setMonth(e.target.value)}>
             <option value="">All months</option>
             {months.map(m => <option key={m} value={m}>{formatMonthLabel(m)}</option>)}
+          </select>
+          <select value={year} onChange={(e) => setYear(e.target.value)}>
+            <option value="">All years</option>
+            {years.map(y => <option key={y} value={y}>{y}</option>)}
           </select>
           <div className="icon-btn-group">
             <button className="btn btn-rust icon-btn" onClick={resetFilters} title="Reset filters" aria-label="Reset filters"><ResetIcon /></button>

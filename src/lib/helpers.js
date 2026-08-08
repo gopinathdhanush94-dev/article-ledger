@@ -30,6 +30,28 @@ export function monthSortKey(raw) {
   return Infinity;
 }
 
+// Pulls just the 4-digit year out of any month-ish value, for a standalone
+// Year filter — independent of exactly which month within that year.
+export function extractYear(raw) {
+  if (!raw) return null;
+  const s = String(raw).trim().toLowerCase();
+  const m = s.match(/^([a-z]{3,4})[\s\-_]?(\d{2,4})(?!\d)/);
+  if (m && MONTH_ABBR_TO_NUM[m[1]]) {
+    return m[2].length === 4 ? m[2] : String(2000 + parseInt(m[2], 10));
+  }
+  const y = s.match(/(20\d{2})/);
+  return y ? y[1] : null;
+}
+
+export function yearOptions(rows) {
+  const years = new Set();
+  for (const r of rows) {
+    const y = extractYear(r.month);
+    if (y) years.add(y);
+  }
+  return [...years].sort((a, b) => b.localeCompare(a)); // most recent first
+}
+
 const MONTH_NUM_TO_ABBR = {1:'JAN',2:'FEB',3:'MAR',4:'APR',5:'MAY',6:'JUN',7:'JUL',8:'AUG',9:'SEP',10:'OCT',11:'NOV',12:'DEC'};
 
 // Normalizes any recognizable "month + year" text ("Jul-26", "jul 2026", "JUL2026")

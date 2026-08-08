@@ -180,7 +180,7 @@ export default function GarmentForm({ garments, editingGroup, onSaved, onCancel 
       const { error: insErr } = await supabase.from('garments').insert(rowsToInsert);
       if (insErr) throw insErr;
 
-      onSaved(!!editingGroup);
+      onSaved(!!editingGroup, style.excel_name.trim());
     } catch (err) {
       dialogs.alertDialog({ title: 'Could not save garment', message: err.message || String(err) });
     } finally {

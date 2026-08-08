@@ -21,6 +21,7 @@ export default function AddProductForm({ products, editingProduct, onSaved, onCa
   const [imagePreview, setImagePreview] = useState(null);
   const [saving, setSaving] = useState(false);
   const [bulkResult, setBulkResult] = useState([]);
+  const [bulkProgress, setBulkProgress] = useState(null);
 
   useEffect(() => {
     if (editingProduct) {
@@ -245,11 +246,11 @@ export default function AddProductForm({ products, editingProduct, onSaved, onCa
       if (form.id) {
         const { error } = await supabase.from('products').update(row).eq('id', form.id);
         if (error) throw error;
-        onSaved(true);
+        onSaved(true, ean);
       } else {
         const { error } = await supabase.from('products').insert(row);
         if (error) throw error;
-        onSaved(false);
+        onSaved(false, ean);
       }
     } catch (err) {
       dialogs.alertDialog({ title: 'Could not save article', message: err.message || String(err) });
@@ -312,6 +313,8 @@ export default function AddProductForm({ products, editingProduct, onSaved, onCa
     const log = [];
     const seen = new Set();
     let added = 0;
+    const totalRows = rows.length - 1;
+    setBulkProgress({ current: 0, total: totalRows });
 
     for (let i = 1; i < rows.length; i++) {
       const r = rows[i];
@@ -319,8 +322,8 @@ export default function AddProductForm({ products, editingProduct, onSaved, onCa
       const ean = get(r, 'EAN').replace(/\D/g, '');
       const label = desc || ean || `Row ${i + 1}`;
 
-      if (!isValidEan(ean)) { log.push({ label, ok: false, msg: 'invalid EAN (needs 13 digits)' }); continue; }
-      if (seen.has(ean) || await eanExists(ean, null)) { log.push({ label, ok: false, msg: 'duplicate EAN — skipped' }); continue; }
+      if (!isValidEan(ean)) { log.push({ label, ok: false, msg: 'invalid EAN (needs 13 digits)' }); setBulkProgress({ current: i, total: totalRows }); continue; }
+      if (seen.has(ean) || await eanExists(ean, null)) { log.push({ label, ok: false, msg: 'duplicate EAN — skipped' }); setBulkProgress({ current: i, total: totalRows }); continue; }
       seen.add(ean);
 
       const row = {
@@ -350,11 +353,13 @@ export default function AddProductForm({ products, editingProduct, onSaved, onCa
         custom: true,
       };
       const { error } = await supabase.from('products').insert(row);
-      if (error) { log.push({ label, ok: false, msg: error.message }); continue; }
+      if (error) { log.push({ label, ok: false, msg: error.message }); setBulkProgress({ current: i, total: totalRows }); continue; }
       added++;
       log.push({ label, ok: true, msg: 'added' });
+      setBulkProgress({ current: i, total: totalRows });
     }
 
+    setBulkProgress(null);
     setBulkResult(log);
     if (added > 0) onSaved();
   }
@@ -479,6 +484,20 @@ export default function AddProductForm({ products, editingProduct, onSaved, onCa
             </label>
             <button type="button" className="btn" onClick={downloadBulkTemplate}>⬇ Download CSV template</button>
           </div>
+          {bulkProgress && (
+            <div style={{ marginTop: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'var(--text-soft)', marginBottom: 6 }}>
+                <span>Uploading…</span>
+                <span>{bulkProgress.current} / {bulkProgress.total}</span>
+              </div>
+              <div className="bar-track" style={{ height: 10 }}>
+                <div
+                  className="bar-fill"
+                  style={{ width: `${bulkProgress.total ? Math.round((bulkProgress.current / bulkProgress.total) * 100) : 0}%`, transition: 'width .15s ease' }}
+                />
+              </div>
+            </div>
+          )}
           {bulkResult.length > 0 && (
             <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, marginTop: 12 }}>
               <div style={{ fontWeight: 600 }}>

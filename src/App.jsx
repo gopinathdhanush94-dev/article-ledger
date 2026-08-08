@@ -3,7 +3,6 @@ import { supabase } from './supabaseClient.js';
 import { useAuth } from './lib/useAuth.js';
 import { DialogProvider, useDialogs } from './components/Dialogs.jsx';
 import { ToastProvider, useToast } from './components/Toast.jsx';
-import CardGridSkeleton from './components/Skeleton.jsx';
 import LoginModal from './components/LoginModal.jsx';
 import Home from './components/Home.jsx';
 import Catalog from './components/Catalog.jsx';
@@ -177,10 +176,15 @@ function AppInner() {
     });
   }
 
-  function handleProductSaved(wasEditing) {
+  function handleProductSaved(wasEditing, ean) {
     setEditingProduct(null);
-    navigate('catalog');
     loadProducts();
+    if (ean) {
+      setCatalogFilters({ search: ean, autoOpen: true, _t: Date.now() });
+      navigate('catalog');
+    } else {
+      navigate('catalog');
+    }
     showToast(wasEditing ? 'Changes saved' : 'Article added');
   }
 
@@ -205,10 +209,15 @@ function AppInner() {
     });
   }
 
-  function handleGarmentSaved(wasEditing) {
+  function handleGarmentSaved(wasEditing, styleName) {
     setEditingGarmentGroup(null);
-    navigate('garments');
     loadGarments();
+    if (styleName) {
+      setGarmentFilters({ search: styleName, _t: Date.now() });
+      navigate('garments');
+    } else {
+      navigate('garments');
+    }
     showToast(wasEditing ? 'Changes saved' : 'Garment style added');
   }
 
@@ -243,7 +252,9 @@ function AppInner() {
       </header>
 
       {dataLoading && !hasLoadedOnce && (
-        <main><CardGridSkeleton /></main>
+        <div style={{ padding: 60, textAlign: 'center', fontFamily: "'Inter',sans-serif", color: 'var(--ink-soft)' }}>
+          Loading catalog…
+        </div>
       )}
 
       {dataError && !hasLoadedOnce && (
@@ -284,7 +295,9 @@ function AppInner() {
           </div>
           <div style={{ display: view === 'garments' ? 'block' : 'none' }}>
             {garmentsLoading && !garmentsHasLoadedOnce && (
-              <main><CardGridSkeleton /></main>
+              <div style={{ padding: 60, textAlign: 'center', fontFamily: "'Inter',sans-serif", color: 'var(--ink-soft)' }}>
+                Loading garments…
+              </div>
             )}
             {garmentsError && !garmentsHasLoadedOnce && (
               <div style={{ padding: 40, textAlign: 'center', fontFamily: "'Inter',sans-serif", color: 'var(--danger)' }}>

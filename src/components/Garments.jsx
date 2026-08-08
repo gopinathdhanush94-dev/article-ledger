@@ -54,7 +54,7 @@ export default function Garments({ garments, initialFilters, onEdit, onDelete })
       setBrand(initialFilters.brand || '');
       setModelName(initialFilters.modelName || '');
       setMonth(initialFilters.month || '');
-      setQ('');
+      setQ(initialFilters.search || '');
     }
   }, [initialFilters]);
 
