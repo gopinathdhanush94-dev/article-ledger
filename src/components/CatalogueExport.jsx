@@ -32,11 +32,17 @@ export default function CatalogueExport({ type, rows, onClose }) {
     const html = type === 'garment'
       ? buildGarmentHtml(rows, chosen, includeImage)
       : buildGeneralHtml(rows, chosen, includeImage);
-    const win = window.open('', '_blank', 'noopener,noreferrer');
+    const win = window.open('', '_blank');
     if (!win) { alert('Please allow pop-ups for this site to export the catalogue.'); return; }
-    win.document.open();
-    win.document.write(html);
-    win.document.close();
+    try {
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      onClose();
+    } catch (err) {
+      try { win.close(); } catch {}
+      alert('Unable to create the catalogue window. Please allow pop-ups for this site.');
+    }
   }
 
   return (
