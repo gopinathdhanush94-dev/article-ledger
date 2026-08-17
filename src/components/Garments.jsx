@@ -3,6 +3,7 @@ import * as XLSX from 'xlsx';
 import { fmtINR, uniqueSorted, extractYear } from '../lib/helpers.js';
 import { ResetIcon, DownloadIcon } from './Icons.jsx';
 import { useHideOnScroll } from '../lib/useHideOnScroll.js';
+import CatalogueExport from './CatalogueExport.jsx';
 
 const SHEET_ORDER = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUNE'];
 
@@ -49,6 +50,7 @@ export default function Garments({ garments, initialFilters, onEdit, onDelete })
   const [month, setMonth] = useState('');
   const [year, setYear] = useState('');
   const [selected, setSelected] = useState(null);
+  const [showCatalogueExport, setShowCatalogueExport] = useState(false);
   const controlsHidden = useHideOnScroll();
 
   useEffect(() => {
@@ -198,6 +200,7 @@ export default function Garments({ garments, initialFilters, onEdit, onDelete })
           <div className="icon-btn-group">
             <button className="btn btn-rust icon-btn" onClick={resetFilters} title="Reset filters" aria-label="Reset filters"><ResetIcon /></button>
             <button className="btn btn-teal icon-btn" onClick={downloadXlsx} title="Download filtered (.xlsx)" aria-label="Download filtered (.xlsx)"><DownloadIcon /></button>
+            <button className="btn btn-teal" onClick={() => setShowCatalogueExport(true)} title="Create catalogue">Catalogue</button>
           </div>
         </div>
         <div className="result-count">
@@ -259,6 +262,8 @@ export default function Garments({ garments, initialFilters, onEdit, onDelete })
           })()}
         />
       )}
+
+      {showCatalogueExport && <CatalogueExport type="garment" rows={filtered} onClose={() => setShowCatalogueExport(false)} />}
     </>
   );
 }

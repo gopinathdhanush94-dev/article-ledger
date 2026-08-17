@@ -317,3 +317,12 @@ footer{ text-align:center; padding:30px 20px 44px; font-family:'Inter', sans-ser
   .stat-cards{ grid-template-columns:repeat(2,1fr); }
   .cat-tile-grid{ grid-template-columns:repeat(auto-fill, minmax(100px,1fr)); }
 }
+
+/* Catalogue export field picker */
+.catalogue-export-modal{max-width:760px;max-height:88vh;overflow:auto;padding:26px}.catalogue-export-modal .sub{margin:4px 0 18px;color:var(--ink-soft)}
+.export-image-toggle{display:flex;align-items:center;gap:9px;font-weight:700;margin-bottom:18px}.export-image-toggle input,.export-field-option input{accent-color:var(--teal)}
+.export-field-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;border:1px solid var(--rule);border-radius:8px;padding:14px;margin-bottom:20px}
+.export-field-option{display:flex;align-items:center;gap:8px;padding:8px;border-radius:5px;background:var(--paper);font-size:13px;cursor:pointer}.export-field-option:hover{background:var(--rule-soft,#f2f2f2)}
+.catalogue-export-actions{display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap}
+@media(max-width:800px){.export-field-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.catalogue-export-modal{width:94vw}}
+@media(max-width:520px){.export-field-grid{grid-template-columns:1fr}}

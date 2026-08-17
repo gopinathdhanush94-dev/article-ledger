@@ -4,6 +4,7 @@ import { fmtINR, discountPct, formatMonthLabel, normalizeMonthValue, extractYear
 import ProductModal from './ProductModal.jsx';
 import { ResetIcon, DownloadIcon } from './Icons.jsx';
 import { useHideOnScroll } from '../lib/useHideOnScroll.js';
+import CatalogueExport from './CatalogueExport.jsx';
 
 export default function Catalog({ products, initialFilters, onEdit, onDelete, isAuthed }) {
   const [q, setQ] = useState('');
@@ -12,6 +13,7 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
   const [month, setMonth] = useState('');
   const [year, setYear] = useState('');
   const [selected, setSelected] = useState(null);
+  const [showCatalogueExport, setShowCatalogueExport] = useState(false);
   const [autoOpenPending, setAutoOpenPending] = useState(false);
   const controlsHidden = useHideOnScroll();
 
@@ -161,6 +163,7 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
           <div className="icon-btn-group">
             <button className="btn btn-rust icon-btn" onClick={resetFilters} title="Reset filters" aria-label="Reset filters"><ResetIcon /></button>
             <button className="btn btn-teal icon-btn" onClick={downloadXlsx} title="Download filtered (.xlsx)" aria-label="Download filtered (.xlsx)"><DownloadIcon /></button>
+            <button className="btn btn-teal" onClick={() => setShowCatalogueExport(true)} title="Create catalogue">Catalogue</button>
           </div>
         </div>
         <div className="result-count"><b>{filtered.length}</b> articles found</div>
@@ -226,6 +229,8 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
           })()}
         />
       )}
+
+      {showCatalogueExport && <CatalogueExport type="general" rows={filtered} onClose={() => setShowCatalogueExport(false)} />}
     </>
   );
 }
