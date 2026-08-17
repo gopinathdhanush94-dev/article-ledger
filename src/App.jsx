@@ -22,6 +22,37 @@ const BrandIconSVG = () => (
   </svg>
 );
 
+
+function ScrollToTopButton() {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setVisible(window.scrollY > 420);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  if (!visible) return null;
+
+  return (
+    <button
+      type="button"
+      className="scroll-top-btn"
+      onClick={scrollToTop}
+      aria-label="Scroll to top"
+      title="Back to top"
+    >
+      <span aria-hidden="true">↑</span>
+      <span className="scroll-top-label">Top</span>
+    </button>
+  );
+}
+
 function AppInner() {
   const { isAuthed, signIn, signOut } = useAuth();
   const { showToast } = useToast();
@@ -333,6 +364,8 @@ function AppInner() {
       )}
 
       <footer>Article Ledger — built with React + Supabase</footer>
+
+      <ScrollToTopButton />
 
       {showLogin && (
         <LoginModal
