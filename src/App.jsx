@@ -9,6 +9,7 @@ import Catalog from './components/Catalog.jsx';
 import AddProductForm from './components/AddProductForm.jsx';
 import Garments from './components/Garments.jsx';
 import GarmentForm from './components/GarmentForm.jsx';
+import Calculator from './components/Calculator.jsx';
 
 const BrandIconSVG = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -66,6 +67,7 @@ function AppInner() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [showLogin, setShowLogin] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
+  const [showCalculator, setShowCalculator] = useState(false);
 
   const [garments, setGarments] = useState([]);
   const [garmentsLoading, setGarmentsLoading] = useState(true);
@@ -262,6 +264,9 @@ function AppInner() {
             </div>
           </button>
           <div className="header-actions">
+            <button className="btn calculator-trigger" type="button" onClick={() => setShowCalculator(true)} title="Open calculator" aria-label="Open calculator">
+              <span aria-hidden="true">🧮</span> Calculator
+            </button>
             {isAuthed ? (
               <>
                 <span className="who">Signed in</span>
@@ -358,6 +363,8 @@ function AppInner() {
       <footer>Article Ledger — built with React + Supabase</footer>
 
       <ScrollToTopButton />
+
+      <Calculator open={showCalculator} onClose={() => setShowCalculator(false)} />
 
       {showLogin && (
         <LoginModal
