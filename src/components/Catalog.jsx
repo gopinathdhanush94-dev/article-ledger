@@ -64,18 +64,46 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
 
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase();
-    return products.filter(p => {
-      if (cat && p.category !== cat) return false;
-      if (brand && p.brand !== brand) return false;
-      if (month && normalizeMonthValue(p.month) !== month) return false;
-      if (year && extractYear(p.month) !== year) return false;
-      if (query) {
-        const hay = [p.ean, p.brand, p.category, p.description, p.model, p.article_no, p.hsn]
-          .filter(Boolean).join(' ').toLowerCase();
-        if (!hay.includes(query)) return false;
+    const monthNumbers = { JAN: 1, FEB: 2, MAR: 3, APR: 4, MAY: 5, JUN: 6, JUL: 7, AUG: 8, SEP: 9, OCT: 10, NOV: 11, DEC: 12 };
+
+    const getDateKey = (p) => {
+      const raw = normalizeMonthValue(p.month) || '';
+      const match = raw.match(/^([A-Z]{3})-(\d{2})$/);
+      if (match) {
+        return (2000 + Number(match[2])) * 100 + (monthNumbers[match[1]] || 0);
       }
-      return true;
-    });
+      const fullYear = extractYear(p.month);
+      return fullYear ? Number(fullYear) * 100 : 0;
+    };
+
+    return products
+      .filter(p => {
+        if (cat && p.category !== cat) return false;
+        if (brand && p.brand !== brand) return false;
+        if (month && normalizeMonthValue(p.month) !== month) return false;
+        if (year && extractYear(p.month) !== year) return false;
+        if (query) {
+          const hay = [p.ean, p.brand, p.category, p.description, p.model, p.article_no, p.hsn]
+            .filter(Boolean).join(' ').toLowerCase();
+          if (!hay.includes(query)) return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        // Newest manufacturing/import month first. For products in the same
+        // month, use created_at so newly added articles appear first.
+        const dateDiff = getDateKey(b) - getDateKey(a);
+        if (dateDiff !== 0) return dateDiff;
+
+        const createdA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const createdB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        if (createdB !== createdA) return createdB - createdA;
+
+        // Stable final tie-breaker so the order doesn't appear random.
+        return String(a.description || a.model || a.ean || '').localeCompare(
+          String(b.description || b.model || b.ean || '')
+        );
+      });
   }, [products, q, cat, brand, month, year]);
 
   useEffect(() => {
