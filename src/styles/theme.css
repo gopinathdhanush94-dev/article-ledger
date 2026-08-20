@@ -482,3 +482,205 @@ footer{ text-align:center; padding:30px 20px 44px; font-family:'Inter', sans-ser
   .calculator-float-btn{ width:48px; min-width:48px; height:48px; }
   .calculator-float-icon{ width:40px; height:40px; }
 }
+
+/* =========================================================
+   GLASSMORPHISM UI / UX REFRESH
+   Keeps existing functionality and component structure intact.
+   ========================================================= */
+:root{
+  --bg:#eef3f8;
+  --bg-subtle:rgba(246,249,252,.72);
+  --surface:rgba(255,255,255,.64);
+  --surface-strong:rgba(255,255,255,.82);
+  --border:rgba(255,255,255,.62);
+  --border-strong:rgba(148,163,184,.38);
+  --text:#10233f;
+  --text-soft:#5f7088;
+  --text-muted:#8c9bb0;
+  --primary:#e4572e;
+  --primary-hover:#c8461e;
+  --primary-soft:rgba(228,87,46,.12);
+  --teal:#0d9488;
+  --teal-hover:#0b7a70;
+  --teal-soft:rgba(13,148,136,.11);
+  --shadow-sm:0 4px 18px rgba(25,42,70,.07);
+  --shadow-md:0 10px 30px rgba(25,42,70,.10);
+  --shadow-lg:0 24px 60px rgba(25,42,70,.18);
+}
+
+html{scroll-behavior:smooth;}
+body{
+  background:
+    radial-gradient(circle at 8% 4%, rgba(228,87,46,.11), transparent 28%),
+    radial-gradient(circle at 88% 10%, rgba(13,148,136,.12), transparent 30%),
+    radial-gradient(circle at 50% 100%, rgba(59,130,246,.08), transparent 34%),
+    linear-gradient(135deg,#eef3f8 0%,#f7f9fc 48%,#edf4f4 100%);
+  min-height:100vh;
+  position:relative;
+}
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:-1;
+  background:linear-gradient(120deg,rgba(255,255,255,.28),transparent 45%,rgba(255,255,255,.16));
+}
+#root{position:relative;z-index:0;}
+
+/* Header becomes a floating translucent glass panel */
+header{
+  position:sticky;
+  top:0;
+  z-index:80;
+  background:rgba(255,255,255,.58);
+  backdrop-filter:blur(22px) saturate(145%);
+  -webkit-backdrop-filter:blur(22px) saturate(145%);
+  border-bottom:1px solid rgba(255,255,255,.72);
+  box-shadow:0 8px 30px rgba(30,55,90,.07);
+  padding:14px 28px 0;
+}
+.header-inner{padding-bottom:12px;}
+.brand-icon{
+  width:44px;height:44px;border-radius:14px;
+  background:linear-gradient(145deg,rgba(228,87,46,.96),rgba(200,70,30,.86));
+  box-shadow:0 8px 20px rgba(228,87,46,.22),inset 0 1px 0 rgba(255,255,255,.35);
+}
+.brand-mark:hover .brand-icon{transform:translateY(-1px);box-shadow:0 11px 24px rgba(228,87,46,.26),inset 0 1px 0 rgba(255,255,255,.4);}
+.brand-icon{transition:transform .18s ease,box-shadow .18s ease;}
+
+nav.tabs{gap:7px;}
+nav.tabs button{
+  border-radius:12px 12px 0 0;
+  border-bottom:2px solid transparent;
+  padding:11px 16px;
+  transition:background .18s ease,color .18s ease,transform .18s ease;
+}
+nav.tabs button:hover{background:rgba(255,255,255,.42);transform:translateY(-1px);}
+nav.tabs button.active{
+  background:rgba(255,255,255,.56);
+  box-shadow:inset 0 -2px 0 var(--primary),0 -1px 12px rgba(255,255,255,.28);
+}
+
+/* Buttons and form controls */
+.btn,
+.icon-btn,
+select,input,textarea{
+  background:rgba(255,255,255,.64);
+  border-color:rgba(148,163,184,.28);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 3px 12px rgba(25,42,70,.045);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+.btn:hover{background:rgba(255,255,255,.82);border-color:rgba(148,163,184,.42);transform:translateY(-1px);}
+.btn-primary{background:linear-gradient(135deg,rgba(228,87,46,.96),rgba(200,70,30,.92));color:#fff;box-shadow:0 8px 18px rgba(228,87,46,.18),inset 0 1px 0 rgba(255,255,255,.25);}
+.btn-primary:hover{background:linear-gradient(135deg,rgba(235,98,58,.98),rgba(200,70,30,.96));}
+.btn-rust{background:rgba(255,255,255,.56);}
+.btn-teal{background:rgba(255,255,255,.56);}
+select,input,textarea{background:rgba(255,255,255,.7);}
+select:focus,input:focus,textarea:focus{box-shadow:0 0 0 4px rgba(228,87,46,.10),0 8px 22px rgba(25,42,70,.06);}
+
+/* Sticky filter glass shelf */
+.controls{
+  background:rgba(245,249,252,.58);
+  backdrop-filter:blur(20px) saturate(135%);
+  -webkit-backdrop-filter:blur(20px) saturate(135%);
+  border-bottom:1px solid rgba(255,255,255,.72);
+  box-shadow:0 8px 24px rgba(25,42,70,.045);
+}
+.search-box{
+  background:rgba(255,255,255,.68);
+  border-color:rgba(255,255,255,.82);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 7px 22px rgba(25,42,70,.06);
+  backdrop-filter:blur(14px);
+}
+
+/* Product cards: translucent shell with a brighter image pane */
+.card{
+  background:linear-gradient(145deg,rgba(255,255,255,.76),rgba(255,255,255,.48));
+  border:1px solid rgba(255,255,255,.78);
+  border-radius:18px;
+  box-shadow:0 8px 26px rgba(25,42,70,.07),inset 0 1px 0 rgba(255,255,255,.8);
+  backdrop-filter:blur(16px) saturate(125%);
+  -webkit-backdrop-filter:blur(16px) saturate(125%);
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease;
+}
+.card:hover{
+  transform:translateY(-5px);
+  border-color:rgba(255,255,255,.98);
+  box-shadow:0 18px 38px rgba(25,42,70,.13),inset 0 1px 0 rgba(255,255,255,.9);
+}
+.card-img{
+  background:rgba(248,250,252,.7);
+  border-bottom:1px solid rgba(255,255,255,.75);
+}
+.card-body{padding:15px 16px 17px;}
+.cat-tag,.off-badge,.custom-flag{backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+.cat-tag{background:rgba(228,87,46,.12);}
+.off-badge{background:rgba(13,148,136,.12);}
+.meta-line{border-top-color:rgba(148,163,184,.18);}
+
+/* Main content spacing and visual rhythm */
+main,.home-wrap,.form-wrap{padding-top:26px;}
+.result-count{padding-left:2px;}
+
+/* Glass modals / overlays */
+.overlay,.calculator-overlay{background:rgba(15,23,42,.30);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);}
+.modal,.calculator{
+  background:linear-gradient(145deg,rgba(255,255,255,.82),rgba(245,249,252,.68));
+  border:1px solid rgba(255,255,255,.86);
+  box-shadow:0 30px 80px rgba(15,23,42,.22),inset 0 1px 0 rgba(255,255,255,.9);
+  backdrop-filter:blur(24px) saturate(140%);
+  -webkit-backdrop-filter:blur(24px) saturate(140%);
+}
+.modal-close,.modal-nav-btn,.calculator-close{
+  background:rgba(255,255,255,.64);
+  border-color:rgba(148,163,184,.24);
+  box-shadow:0 5px 16px rgba(25,42,70,.08),inset 0 1px 0 rgba(255,255,255,.8);
+}
+.modal-nav-btn:hover,.modal-close:hover,.calculator-close:hover{background:rgba(255,255,255,.86);}
+
+/* Floating tools: understated glass buttons */
+.scroll-top-btn,.calculator-float-btn{
+  border:1px solid rgba(255,255,255,.78)!important;
+  box-shadow:0 12px 30px rgba(25,42,70,.15),inset 0 1px 0 rgba(255,255,255,.85)!important;
+  backdrop-filter:blur(18px) saturate(140%);
+  -webkit-backdrop-filter:blur(18px) saturate(140%);
+}
+.scroll-top-btn{background:rgba(255,255,255,.72)!important;color:var(--text)!important;}
+.calculator-float-btn{background:rgba(25,29,34,.92)!important;}
+.calculator-float-btn:hover{transform:translateY(-2px) scale(1.03);}
+
+/* Catalogue/home tiles and common panels */
+.cat-tile,.stat-chip,.home-card,.info-panel,.form-section,.panel,.table-wrap{
+  background:rgba(255,255,255,.58);
+  border-color:rgba(255,255,255,.78);
+  box-shadow:0 8px 24px rgba(25,42,70,.06),inset 0 1px 0 rgba(255,255,255,.75);
+  backdrop-filter:blur(16px) saturate(125%);
+  -webkit-backdrop-filter:blur(16px) saturate(125%);
+}
+.cat-tile:hover{background:rgba(255,255,255,.78);}
+
+/* Tables and data areas */
+table{border-color:rgba(148,163,184,.18);}
+th{background:rgba(255,255,255,.5);backdrop-filter:blur(8px);}
+td{background:rgba(255,255,255,.32);}
+
+/* Footer */
+footer{
+  background:rgba(255,255,255,.38)!important;
+  border-top:1px solid rgba(255,255,255,.72)!important;
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+}
+
+@media (max-width:800px){
+  header{padding:12px 16px 0;}
+  .header-inner{gap:12px;}
+  main,.home-wrap,.form-wrap{padding-left:16px;padding-right:16px;}
+  .controls{padding-left:16px;padding-right:16px;}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;}
+}
