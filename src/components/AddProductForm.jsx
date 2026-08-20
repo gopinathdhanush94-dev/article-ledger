@@ -427,6 +427,7 @@ export default function AddProductForm({ products, editingProduct, onSaved, onCa
     </div>
   );
 
+}
 function DimGroup({ title, prefix, form, set, dimUnits }) {
   const L = `${prefix}_l`, W = `${prefix}_w`, H = `${prefix}_h`, DU = `${prefix}_dim_unit`;
   const NW = `${prefix}_nw`, GW = `${prefix}_gw`, WU = `${prefix}_wt_unit`;
