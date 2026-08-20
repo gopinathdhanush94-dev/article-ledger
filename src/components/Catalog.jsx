@@ -8,6 +8,7 @@ import CatalogueExport from './CatalogueExport.jsx';
 
 export default function Catalog({ products, initialFilters, onEdit, onDelete, isAuthed }) {
   const [q, setQ] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
   const [cat, setCat] = useState('');
   const [brand, setBrand] = useState('');
   const [month, setMonth] = useState('');
@@ -62,6 +63,27 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
     if (year && !years.includes(year)) setYear('');
   }, [year, years.join('|')]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const searchSuggestions = useMemo(() => {
+    const query = q.trim().toLowerCase();
+    if (!query) return [];
+    const seen = new Set();
+    const out = [];
+    for (const p of products) {
+      const candidates = [
+        ['EAN', p.ean], ['Article No.', p.article_no], ['Model', p.model],
+        ['Description', p.description], ['Brand', p.brand], ['Category', p.category], ['HSN', p.hsn]
+      ];
+      for (const [type, value] of candidates) {
+        if (!value) continue;
+        const text = String(value);
+        const key = type + '|' + text.toLowerCase();
+        if (!seen.has(key) && text.toLowerCase().includes(query)) { seen.add(key); out.push({ type, value: text }); }
+        if (out.length >= 8) return out;
+      }
+    }
+    return out;
+  }, [products, q]);
+
   const filtered = useMemo(() => {
     const query = q.trim().toLowerCase();
     const monthNumbers = { JAN: 1, FEB: 2, MAR: 3, APR: 4, MAY: 5, JUN: 6, JUL: 7, AUG: 8, SEP: 9, OCT: 10, NOV: 11, DEC: 12 };
@@ -83,7 +105,7 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
         if (month && normalizeMonthValue(p.month) !== month) return false;
         if (year && extractYear(p.month) !== year) return false;
         if (query) {
-          const hay = [p.ean, p.brand, p.category, p.description, p.model, p.article_no, p.hsn]
+          const hay = [p.ean, p.brand, p.category, p.description, p.model, p.article_no, p.hsn, p.marketed_by, p.month, p.id]
             .filter(Boolean).join(' ').toLowerCase();
           if (!hay.includes(query)) return false;
         }
@@ -169,8 +191,15 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
     <>
       <div className={`controls${controlsHidden ? ' controls-hidden' : ''}`}>
         <div className="controls-row">
-          <div className="search-box">
-            <input placeholder="Search by EAN, brand, category, model or description…" value={q} onChange={(e) => setQ(e.target.value)} />
+          <div className="search-box search-box-enhanced">
+            <span className="search-glyph">⌕</span>
+            <input aria-label="Search articles" placeholder="Search EAN, Article No., model, brand, category, HSN…" value={q} onFocus={() => setSearchFocused(true)} onBlur={() => setTimeout(() => setSearchFocused(false), 120)} onChange={(e) => setQ(e.target.value)} />
+            {q && <button type="button" className="search-clear" onMouseDown={(e)=>e.preventDefault()} onClick={() => setQ('')} aria-label="Clear search">×</button>}
+            {searchFocused && q && searchSuggestions.length > 0 && (
+              <div className="search-suggestions">
+                {searchSuggestions.map((s, i) => <button key={i} type="button" onMouseDown={(e)=>e.preventDefault()} onClick={() => setQ(s.value)}><span>{s.type}</span><strong>{s.value}</strong></button>)}
+              </div>
+            )}
           </div>
           <select value={cat} onChange={(e) => setCat(e.target.value)}>
             <option value="">All categories</option>
@@ -194,7 +223,7 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
             <button className="btn btn-teal" onClick={() => setShowCatalogueExport(true)} title="Create catalogue">Catalogue</button>
           </div>
         </div>
-        <div className="result-count"><b>{filtered.length}</b> articles found</div>
+        <div className="result-count"><b>{filtered.length}</b> articles found {q && <span>for <strong>“{q}”</strong></span>}</div>
       </div>
 
       <main>

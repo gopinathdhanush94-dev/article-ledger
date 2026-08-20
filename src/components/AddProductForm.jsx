@@ -22,6 +22,7 @@ export default function AddProductForm({ products, editingProduct, onSaved, onCa
   const [saving, setSaving] = useState(false);
   const [bulkResult, setBulkResult] = useState([]);
   const [bulkProgress, setBulkProgress] = useState(null);
+  const [editTab, setEditTab] = useState('core');
 
   useEffect(() => {
     if (editingProduct) {
@@ -137,6 +138,11 @@ export default function AddProductForm({ products, editingProduct, onSaved, onCa
 
   const REASON_FIELDS = [
     { key: 'ean', label: 'EAN Code', getForm: () => (form.ean || '').trim() || null, getOriginal: () => editingProduct?.ean ?? null },
+    { key: 'article_no', label: 'Article No.', getForm: () => (form.article_no || '').trim() || null, getOriginal: () => editingProduct?.article_no ?? null },
+    { key: 'description', label: 'Description', getForm: () => (form.description || '').trim() || null, getOriginal: () => editingProduct?.description ?? null },
+    { key: 'brand', label: 'Brand', getForm: () => (form.brand || '').trim() || null, getOriginal: () => editingProduct?.brand ?? null },
+    { key: 'category', label: 'Category', getForm: () => (form.category || '').trim() || null, getOriginal: () => editingProduct?.category ?? null },
+    { key: 'model', label: 'Model', getForm: () => (form.model || '').trim() || null, getOriginal: () => editingProduct?.model ?? null },
     { key: 'hsn', label: 'HSN Code', getForm: () => form.hsn.trim() || null, getOriginal: () => editingProduct?.hsn ?? null },
     { key: 'mrp', label: 'MRP', getForm: () => numOrNull(form.mrp), getOriginal: () => editingProduct?.mrp ?? null },
     { key: 'sp', label: 'Selling Price', getForm: () => numOrNull(form.sp), getOriginal: () => editingProduct?.sp ?? null },
@@ -366,155 +372,60 @@ export default function AddProductForm({ products, editingProduct, onSaved, onCa
 
   return (
     <div className="form-wrap">
-      <div className="form-card">
-        <h2>{form.id ? 'Edit Article' : 'Add a New Article'}</h2>
-        <div className="sub">{form.id ? 'Updating an existing catalog entry.' : 'New products are saved straight to the database and visible to everyone.'}</div>
+      <div className="form-card editor-card">
+        <div className="editor-header">
+          <div><span className="eyebrow">PRODUCT MASTER</span><h2>{form.id ? 'Edit Article' : 'Add a New Article'}</h2><div className="sub">{form.id ? 'Update the article in focused sections. Your changes are tracked.' : 'Create a complete article record with guided sections.'}</div></div>
+          <div className="editor-status">{form.id ? 'Editing existing record' : 'New record'}</div>
+        </div>
+        <div className="editor-tabs" role="tablist">
+          {[['core','Core Details'],['commercial','Commercial'],['logistics','Logistics'],['media','Image']].map(([key,label])=><button type="button" key={key} className={editTab===key?'active':''} onClick={()=>setEditTab(key)}>{label}</button>)}
+        </div>
         <form onSubmit={handleSubmit}>
-          <div className="form-grid">
-            <div className="field full">
-              <label>Product Image</label>
-              <div
-                className={`img-drop${dragActive ? ' img-drop-active' : ''}`}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-              >
-                <div className="preview">
-                  {imagePreview ? <img src={imagePreview} alt="" /> : <span style={{ fontSize: 9, fontFamily: "'Inter',sans-serif", color: '#A79E85' }}>NO IMAGE</span>}
-                </div>
-                <div>
-                  <input type="file" accept="image/*" onChange={handleImageChange} />
-                  <div className="hint">JPG or PNG. Drag a file from your computer, or drag an image straight from a website. Uploaded to Supabase Storage on save.</div>
-                </div>
-              </div>
-            </div>
+          {editTab==='core' && <div className="form-grid editor-section">
+            <div className="field full"><div className="section-intro"><strong>Identity & classification</strong><span>Use the EAN as the unique product identity.</span></div></div>
+            <div className="field"><label>Description <span className="req">*</span></label><input type="text" required value={form.description} onChange={e=>set('description',e.target.value)} placeholder="e.g. 5 Pcs Kitchen Tool Set" /></div>
+            <div className="field"><label>Category <span className="req">*</span></label><div className="field-with-add"><Autocomplete value={form.category} onChange={v=>set('category',v)} options={categories} required placeholder="e.g. Kitchen Utility"/><button type="button" className="add-new-btn" onClick={()=>openAddNewDialog('category','category')}>+</button></div></div>
+            <div className="field"><label>Brand <span className="req">*</span></label><div className="field-with-add"><Autocomplete value={form.brand} onChange={v=>set('brand',v)} options={brands} required placeholder="e.g. White Label"/><button type="button" className="add-new-btn" onClick={()=>openAddNewDialog('brand','brand')}>+</button></div></div>
+            <div className="field"><label>Model</label><input type="text" value={form.model} onChange={e=>set('model',e.target.value)} placeholder="e.g. FK1380" /></div>
+            <div className="field"><label>EAN Code <span className="req">*</span></label><input type="text" inputMode="numeric" maxLength={13} required value={form.ean} onChange={e=>{set('ean',e.target.value.replace(/\D/g,'').slice(0,13));setEanError('')}} placeholder="13 digits" />{eanError&&<div className="field-error">{eanError}</div>}</div>
+            <div className="field"><label>HSN Code</label><div className="field-with-add"><Autocomplete value={form.hsn} onChange={v=>set('hsn',v)} options={hsns} placeholder="e.g. 8215"/><button type="button" className="add-new-btn" onClick={()=>openAddNewDialog('hsn','HSN code')}>+</button></div></div>
+            <div className="field"><label>Article No.</label><input type="text" value={form.article_no} onChange={e=>set('article_no',e.target.value)} placeholder="e.g. 494403226" /></div>
+            <div className="field"><label>Marketed By</label><Autocomplete value={form.marketed_by} onChange={v=>set('marketed_by',v)} options={marketers} placeholder="e.g. Gsons" /></div>
+            <div className="field"><label>Month / Batch</label><div className="field-with-add"><Autocomplete value={form.month} onChange={v=>set('month',v)} options={months} placeholder="e.g. JUL-26"/><button type="button" className="add-new-btn" onClick={()=>openAddNewDialog('month','month / batch')}>+</button></div></div>
+          </div>}
 
-            <div className="field">
-              <label>Description <span className="req">*</span></label>
-              <input type="text" required value={form.description} onChange={(e) => set('description', e.target.value)} placeholder="e.g. 5 Pcs Kitchen Tool Set" />
-            </div>
-            <div className="field">
-              <label>Category <span className="req">*</span></label>
-              <div className="field-with-add">
-                <Autocomplete value={form.category} onChange={(v) => set('category', v)} options={categories} required placeholder="e.g. Kitchen Utility" />
-                <button type="button" className="add-new-btn" onClick={() => openAddNewDialog('category', 'category')}>+</button>
-              </div>
-            </div>
-            <div className="field">
-              <label>Brand <span className="req">*</span></label>
-              <div className="field-with-add">
-                <Autocomplete value={form.brand} onChange={(v) => set('brand', v)} options={brands} required placeholder="e.g. White Label" />
-                <button type="button" className="add-new-btn" onClick={() => openAddNewDialog('brand', 'brand')}>+</button>
-              </div>
-            </div>
-            <div className="field">
-              <label>Model</label>
-              <input type="text" value={form.model} onChange={(e) => set('model', e.target.value)} placeholder="e.g. FK1380" />
-            </div>
-            <div className="field">
-              <label>EAN Code <span className="req">*</span> (13 digits)</label>
-              <input
-                type="text" inputMode="numeric" maxLength={13} required value={form.ean}
-                onChange={(e) => { set('ean', e.target.value.replace(/\D/g, '').slice(0, 13)); setEanError(''); }}
-                placeholder="e.g. 8904486401950"
-              />
-              {eanError && <div className="field-error">{eanError}</div>}
-            </div>
-            <div className="field">
-              <label>HSN Code</label>
-              <div className="field-with-add">
-                <Autocomplete value={form.hsn} onChange={(v) => set('hsn', v)} options={hsns} placeholder="e.g. 8215" />
-                <button type="button" className="add-new-btn" onClick={() => openAddNewDialog('hsn', 'HSN code')}>+</button>
-              </div>
-            </div>
-            <div className="field">
-              <label>MRP (₹)</label>
-              <input type="number" min="0" step="0.01" value={form.mrp} onChange={(e) => set('mrp', e.target.value)} placeholder="e.g. 599" />
-            </div>
-            <div className="field">
-              <label>Selling Price (₹)</label>
-              <input type="number" min="0" step="0.01" value={form.sp} onChange={(e) => set('sp', e.target.value)} placeholder="e.g. 249" />
-            </div>
-            <div className="field">
-              <label>Master Carton Qty</label>
-              <input type="number" min="0" step="1" value={form.master_qty} onChange={(e) => set('master_qty', e.target.value)} placeholder="e.g. 96" />
-            </div>
-            <div className="field">
-              <label>Inner Carton Qty</label>
-              <input type="number" min="0" step="1" value={form.inner_qty} onChange={(e) => set('inner_qty', e.target.value)} placeholder="e.g. 12" />
-            </div>
-            <div className="field">
-              <label>Article No.</label>
-              <input type="text" value={form.article_no} onChange={(e) => set('article_no', e.target.value)} placeholder="e.g. ART-1023" />
-            </div>
-            <div className="field">
-              <label>Marketed By</label>
-              <Autocomplete value={form.marketed_by} onChange={(v) => set('marketed_by', v)} options={marketers} placeholder="e.g. Gsons" />
-            </div>
-            <div className="field">
-              <label>Month / Batch</label>
-              <div className="field-with-add">
-                <Autocomplete value={form.month} onChange={(v) => set('month', v)} options={months} placeholder="e.g. JUL-26" />
-                <button type="button" className="add-new-btn" onClick={() => openAddNewDialog('month', 'month / batch')}>+</button>
-              </div>
-            </div>
+          {editTab==='commercial' && <div className="form-grid editor-section">
+            <div className="field full"><div className="section-intro"><strong>Commercial information</strong><span>Pricing and carton quantities used for sales and catalogue output.</span></div></div>
+            <div className="field"><label>MRP (₹)</label><input type="number" min="0" step="0.01" value={form.mrp} onChange={e=>set('mrp',e.target.value)} placeholder="e.g. 599" /></div>
+            <div className="field"><label>Selling Price (₹)</label><input type="number" min="0" step="0.01" value={form.sp} onChange={e=>set('sp',e.target.value)} placeholder="e.g. 249" /></div>
+            <div className="field"><label>Master Carton Qty</label><input type="number" min="0" step="1" value={form.master_qty} onChange={e=>set('master_qty',e.target.value)} placeholder="e.g. 96" /></div>
+            <div className="field"><label>Inner Carton Qty</label><input type="number" min="0" step="1" value={form.inner_qty} onChange={e=>set('inner_qty',e.target.value)} placeholder="e.g. 12" /></div>
+            <div className="field full"><div className="commercial-preview"><div><small>Discount</small><strong>{form.mrp&&form.sp?`${Math.max(0,Math.round((1-(Number(form.sp)/Number(form.mrp)))*100))}%`: '—'}</strong></div><div><small>Article No.</small><strong>{form.article_no||'Not assigned'}</strong></div><div><small>EAN</small><strong>{form.ean||'—'}</strong></div></div></div>
+          </div>}
 
-            <DimGroup title="SKU (unit) dimensions &amp; weight" prefix="sku" form={form} set={set} dimUnits={['CM', 'MM', 'M']} />
-            <DimGroup title="Master carton dimensions &amp; weight" prefix="master" form={form} set={set} dimUnits={['CM', 'MM']} />
-            <DimGroup title="Inner carton dimensions &amp; weight" prefix="inner" form={form} set={set} dimUnits={['CM', 'MM']} />
-          </div>
+          {editTab==='logistics' && <div className="form-grid editor-section">
+            <div className="field full"><div className="section-intro"><strong>Logistics & packaging</strong><span>Dimensions and weights are grouped by SKU, master carton and inner carton.</span></div></div>
+            <DimGroup title="SKU (unit) dimensions &amp; weight" prefix="sku" form={form} set={set} dimUnits={['CM','MM','M']} />
+            <DimGroup title="Master carton dimensions &amp; weight" prefix="master" form={form} set={set} dimUnits={['CM','MM']} />
+            <DimGroup title="Inner carton dimensions &amp; weight" prefix="inner" form={form} set={set} dimUnits={['CM','MM']} />
+          </div>}
 
-          <div className="form-footer">
-            <button type="button" className="btn" onClick={onCancel}>Cancel</button>
-            <button type="submit" className="btn btn-primary" disabled={saving}>
-              {saving ? 'Saving…' : form.id ? 'Save Changes' : 'Add Article'}
-            </button>
-          </div>
+          {editTab==='media' && <div className="editor-media-section">
+            <div className="section-intro"><strong>Product image</strong><span>Use a clean front-facing image. JPG or PNG is recommended.</span></div>
+            <div className={`img-drop editor-drop${dragActive?' img-drop-active':''}`} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
+              <div className="preview large-preview">{imagePreview?<img src={imagePreview} alt=""/>:<span>NO IMAGE</span>}</div>
+              <div className="media-actions"><label className="btn btn-teal">Choose Image<input type="file" accept="image/*" hidden onChange={handleImageChange}/></label><p className="hint">Drag a local image here or choose a file. It will be uploaded to Supabase Storage when you save.</p></div>
+            </div>
+            {imagePreview&&<div className="image-meta"><span>Preview ready</span><span>{imageFile?imageFile.name:'Existing image'}</span></div>}
+          </div>}
+
+          <div className="form-footer editor-footer"><button type="button" className="btn" onClick={onCancel}>Cancel</button><div className="editor-footer-right">{editTab!=='core'&&<button type="button" className="btn" onClick={()=>setEditTab(editTab==='commercial'?'core':editTab==='logistics'?'commercial':'logistics')}>← Previous</button>}{editTab!=='media'&&<button type="button" className="btn btn-teal" onClick={()=>setEditTab(editTab==='core'?'commercial':editTab==='commercial'?'logistics':'media')}>Next →</button>}<button type="submit" className="btn btn-primary" disabled={saving}>{saving?'Saving…':form.id?'Save Changes':'Add Article'}</button></div></div>
         </form>
       </div>
 
-      {!form.id && (
-        <div className="form-card">
-          <h2>Bulk Upload</h2>
-          <div className="sub">Add many articles at once from a CSV file. EAN must be 13 digits and unique — invalid or duplicate rows are skipped and listed below.</div>
-          <div className="controls-row" style={{ marginBottom: 6 }}>
-            <label className="btn btn-primary" style={{ cursor: 'pointer' }}>
-              ⬆ Upload CSV
-              <input type="file" accept=".csv" style={{ display: 'none' }} onChange={handleBulkFile} />
-            </label>
-            <button type="button" className="btn" onClick={downloadBulkTemplate}>⬇ Download CSV template</button>
-          </div>
-          {bulkProgress && (
-            <div style={{ marginTop: 14 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'var(--text-soft)', marginBottom: 6 }}>
-                <span>Uploading…</span>
-                <span>{bulkProgress.current} / {bulkProgress.total}</span>
-              </div>
-              <div className="bar-track" style={{ height: 10 }}>
-                <div
-                  className="bar-fill"
-                  style={{ width: `${bulkProgress.total ? Math.round((bulkProgress.current / bulkProgress.total) * 100) : 0}%`, transition: 'width .15s ease' }}
-                />
-              </div>
-            </div>
-          )}
-          {bulkResult.length > 0 && (
-            <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, marginTop: 12 }}>
-              <div style={{ fontWeight: 600 }}>
-                {bulkResult.filter(r => r.ok).length} added · {bulkResult.filter(r => !r.ok).length} skipped
-              </div>
-              {bulkResult.map((r, i) => (
-                <div key={i} className={`bulk-row ${r.ok ? 'ok' : 'skip'}`}>
-                  <span>{r.label}</span><span>{r.msg}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      {!form.id && <div className="form-card bulk-upload-card"><h2>Bulk Upload</h2><div className="sub">Add many articles at once from a CSV file. Invalid or duplicate EAN rows are skipped and listed below.</div><div className="controls-row" style={{marginBottom:6}}><label className="btn btn-primary" style={{cursor:'pointer'}}>⬆ Upload CSV<input type="file" accept=".csv" style={{display:'none'}} onChange={handleBulkFile}/></label><button type="button" className="btn" onClick={downloadBulkTemplate}>⬇ Download CSV template</button></div>{bulkProgress&&<div style={{marginTop:14}}><div className="bulk-progress-label"><span>Uploading…</span><span>{bulkProgress.current} / {bulkProgress.total}</span></div><div className="bar-track" style={{height:10}}><div className="bar-fill" style={{width:`${bulkProgress.total?Math.round((bulkProgress.current/bulkProgress.total)*100):0}%`}}/></div></div>}{bulkResult.length>0&&<div style={{fontFamily:"'Inter',sans-serif",fontSize:12,marginTop:12}}><div style={{fontWeight:600}}>{bulkResult.filter(r=>r.ok).length} added · {bulkResult.filter(r=>!r.ok).length} skipped</div>{bulkResult.map((r,i)=><div key={i} className={`bulk-row ${r.ok?'ok':'skip'}`}><span>{r.label}</span><span>{r.msg}</span></div>)}</div>}</div>}
     </div>
   );
-}
 
 function DimGroup({ title, prefix, form, set, dimUnits }) {
   const L = `${prefix}_l`, W = `${prefix}_w`, H = `${prefix}_h`, DU = `${prefix}_dim_unit`;

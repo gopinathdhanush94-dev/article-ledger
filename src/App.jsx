@@ -305,7 +305,7 @@ function AppInner() {
       {hasLoadedOnce && (
         <>
           <div style={{ display: view === 'home' ? 'block' : 'none' }}>
-            <Home products={products} garments={garments} onGoToCatalog={goToCatalog} onGoToGarments={goToGarments} />
+            <Home products={products} garments={garments} isAuthed={isAuthed} onProductsUpdated={loadProducts} onGoToCatalog={goToCatalog} onGoToGarments={goToGarments} />
           </div>
           <div style={{ display: view === 'catalog' ? 'block' : 'none' }}>
             <Catalog

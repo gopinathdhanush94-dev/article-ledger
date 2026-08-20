@@ -1,271 +1,109 @@
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { formatMonthLabel, normalizeMonthValue, monthSortKey, categoryIcon, garmentTypeIcon, uniqueSorted } from '../lib/helpers.js';
+import ImageManager from './ImageManager.jsx';
 
-export default function Home({ products, garments, onGoToCatalog, onGoToGarments }) {
+function recentProducts(products) {
+  return [...products].sort((a,b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)).slice(0, 8);
+}
+function completeProduct(p) {
+  const required = ['description','category','brand','model','ean','hsn','article_no','image_url','mrp','sp'];
+  return required.every(k => p[k] !== null && p[k] !== undefined && String(p[k]).trim() !== '');
+}
+
+export default function Home({ products, garments, onGoToCatalog, onGoToGarments, isAuthed, onProductsUpdated }) {
   const [catQuery, setCatQuery] = useState('');
-  const [styleQuery, setStyleQuery] = useState('');
-  const [productsView, setProductsView] = useState('categories'); // 'categories' | 'products' | 'brands'
-  const [productSearchQuery, setProductSearchQuery] = useState('');
   const [brandQuery, setBrandQuery] = useState('');
   const [animate, setAnimate] = useState(false);
+  const [qualityFilter, setQualityFilter] = useState('all');
   useEffect(() => { const t = setTimeout(() => setAnimate(true), 30); return () => clearTimeout(t); }, [products, garments]);
 
   const categories = uniqueSorted(products, 'category');
   const brands = uniqueSorted(products, 'brand');
-
-  const catCounts = useMemo(() => {
-    const c = {};
-    products.forEach(p => { c[p.category] = (c[p.category] || 0) + 1; });
-    return Object.entries(c).sort((a, b) => b[1] - a[1]);
-  }, [products]);
-
-  const filteredCats = catQuery
-    ? catCounts.filter(([name]) => name.toLowerCase().includes(catQuery.trim().toLowerCase()))
-    : catCounts;
-
-  const brandCounts = useMemo(() => {
-    const c = {};
-    products.forEach(p => { c[p.brand] = (c[p.brand] || 0) + 1; });
-    return Object.entries(c).sort((a, b) => b[1] - a[1]);
-  }, [products]);
-
-  const filteredBrands = brandQuery
-    ? brandCounts.filter(([name]) => (name || '').toLowerCase().includes(brandQuery.trim().toLowerCase()))
-    : brandCounts;
-
-  const filteredAllProducts = useMemo(() => {
-    const q = productSearchQuery.trim().toLowerCase();
-    if (!q) return products.slice(0, 100);
-    return products.filter(p => {
-      const hay = [p.description, p.brand, p.category, p.ean, p.model, p.article_no, p.hsn].filter(Boolean).join(' ').toLowerCase();
-      return hay.includes(q);
-    }).slice(0, 200);
-  }, [products, productSearchQuery]);
-
+  const catCounts = useMemo(() => Object.entries(products.reduce((a,p)=>(a[p.category]=(a[p.category]||0)+1,a),{})).sort((a,b)=>b[1]-a[1]), [products]);
+  const brandCounts = useMemo(() => Object.entries(products.reduce((a,p)=>(a[p.brand]=(a[p.brand]||0)+1,a),{})).sort((a,b)=>b[1]-a[1]), [products]);
+  const filteredCats = catQuery ? catCounts.filter(([n]) => (n||'').toLowerCase().includes(catQuery.toLowerCase())) : catCounts;
+  const filteredBrands = brandQuery ? brandCounts.filter(([n]) => (n||'').toLowerCase().includes(brandQuery.toLowerCase())) : brandCounts;
   const monthCounts = useMemo(() => {
-    const c = {};
-    products.forEach(p => { const m = normalizeMonthValue(p.month) || 'CUSTOM'; c[m] = (c[m] || 0) + 1; });
-    return Object.keys(c)
-      .sort((a, b) => {
-        const ka = monthSortKey(a), kb = monthSortKey(b);
-        if (ka === Infinity && kb === Infinity) return a.localeCompare(b);
-        return kb - ka; // descending — most recent month first
-      })
-      .map(m => [m, c[m]]);
+    const c={}; products.forEach(p=>{const m=normalizeMonthValue(p.month)||'CUSTOM'; c[m]=(c[m]||0)+1;});
+    return Object.entries(c).sort((a,b)=>monthSortKey(b[0])-monthSortKey(a[0]));
   }, [products]);
-  const monthMax = monthCounts.length ? Math.max(...monthCounts.map(([, c]) => c)) : 1;
+  const recent = useMemo(()=>recentProducts(products),[products]);
+
+  const quality = useMemo(() => {
+    const checks = [
+      ['image','Missing Images', p => !p.image_url],
+      ['article','Missing Article No.', p => !p.article_no],
+      ['ean','Missing EAN', p => !p.ean],
+      ['hsn','Missing HSN', p => !p.hsn],
+      ['price','Missing Price', p => p.mrp == null && p.sp == null],
+      ['model','Missing Model', p => !p.model],
+    ];
+    const out = Object.fromEntries(checks.map(([k,l])=>[k,{label:l,count:products.filter(c=>c[2](p)).length}]));
+    const complete = products.filter(completeProduct).length;
+    return { ...out, complete, total: products.length };
+  }, [products]);
+  const qualityRows = useMemo(() => {
+    const fn = {
+      image:p=>!p.image_url, article:p=>!p.article_no, ean:p=>!p.ean, hsn:p=>!p.hsn, price:p=>p.mrp==null&&p.sp==null, model:p=>!p.model,
+    };
+    if (qualityFilter==='all') return [];
+    return products.filter(fn[qualityFilter] || (()=>false)).slice(0,100);
+  }, [products, qualityFilter]);
 
   const garmentBrands = uniqueSorted(garments || [], 'brand');
   const garmentStyles = uniqueSorted(garments || [], 'model_name');
-
-  const garmentBrandCounts = useMemo(() => {
-    const c = {};
-    (garments || []).forEach(g => { c[g.brand] = (c[g.brand] || 0) + 1; });
-    return Object.entries(c).sort((a, b) => b[1] - a[1]);
-  }, [garments]);
-  const garmentBrandMax = garmentBrandCounts.length ? garmentBrandCounts[0][1] : 1;
-
-  const garmentStyleCounts = useMemo(() => {
-    const c = {};
-    (garments || []).forEach(g => { c[g.model_name] = (c[g.model_name] || 0) + 1; });
-    return Object.entries(c).sort((a, b) => b[1] - a[1]);
-  }, [garments]);
-  const filteredStyles = styleQuery
-    ? garmentStyleCounts.filter(([name]) => (name || '').toLowerCase().includes(styleQuery.trim().toLowerCase()))
-    : garmentStyleCounts;
+  const garmentStyleCounts = useMemo(()=>Object.entries((garments||[]).reduce((a,g)=>(a[g.model_name]=(a[g.model_name]||0)+1,a),{})).sort((a,b)=>b[1]-a[1]),[garments]);
+  const garmentBrandCounts = useMemo(()=>Object.entries((garments||[]).reduce((a,g)=>(a[g.brand]=(a[g.brand]||0)+1,a),{})).sort((a,b)=>b[1]-a[1]),[garments]);
 
   return (
     <div className="home-wrap">
-      <div style={{ marginBottom: 22 }}>
-        <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 24, margin: 0 }}>Overview</h2>
-        <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'var(--ink-soft)', marginTop: 4 }}>
-          Live snapshot of the article ledger.
+      <section className="dashboard-hero glass-panel">
+        <div>
+          <span className="eyebrow">PRODUCT CONTROL CENTER</span>
+          <h2>Good morning. Here’s your catalogue at a glance.</h2>
+          <p>Search, maintain and publish your product master from one place.</p>
         </div>
-      </div>
+        <div className="hero-actions">
+          <button className="btn btn-primary" onClick={()=>onGoToCatalog({})}>Browse Articles</button>
+          <button className="btn btn-teal" onClick={()=>onGoToGarments({})}>Browse Garments</button>
+        </div>
+      </section>
 
-      <div className="stat-cards">
-        <div className={`stat-card stat-card-clickable${productsView === 'products' ? ' active' : ''}`} onClick={() => setProductsView('products')}>
-          <div className="num">{products.length}</div><div className="lbl">Total Products</div>
-        </div>
-        <div className={`stat-card teal stat-card-clickable${productsView === 'categories' ? ' active' : ''}`} onClick={() => setProductsView('categories')}>
-          <div className="num">{categories.length}</div><div className="lbl">Categories</div>
-        </div>
-        <div className={`stat-card stat-card-clickable${productsView === 'brands' ? ' active' : ''}`} onClick={() => setProductsView('brands')}>
-          <div className="num">{brands.length}</div><div className="lbl">Brands</div>
-        </div>
-      </div>
+      <section className="dashboard-metrics">
+        <button className="metric-card" onClick={()=>onGoToCatalog({})}><span className="metric-icon">◈</span><strong>{products.length}</strong><span>Total Articles</span></button>
+        <button className="metric-card" onClick={()=>onGoToGarments({})}><span className="metric-icon teal">♢</span><strong>{garments.length}</strong><span>Garment Rows</span></button>
+        <div className="metric-card"><span className="metric-icon">◌</span><strong>{categories.length}</strong><span>Categories</span></div>
+        <div className="metric-card"><span className="metric-icon teal">◎</span><strong>{brands.length}</strong><span>Brands</span></div>
+      </section>
 
-      {productsView === 'categories' && (
-        <div className="panel">
-          <h3>Categories <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 10.5, color: 'var(--ink-soft)', fontWeight: 500 }}>{catCounts.length} categories</span></h3>
-          <div className="panel-hint">Search or click a category to view its articles</div>
-          <div className="cat-search-box">
-            <input placeholder="Search categories…" value={catQuery} onChange={(e) => setCatQuery(e.target.value)} />
+      <section className="dashboard-grid">
+        <div className="panel glass-panel quality-panel">
+          <div className="panel-heading-row"><div><h3>Data Quality Center</h3><div className="panel-hint">Click a problem to review the affected records.</div></div><span className={`quality-score ${quality.complete/Math.max(quality.total,1)>.9?'good':''}`}>{Math.round(quality.complete/Math.max(quality.total,1)*100)}% complete</span></div>
+          <div className="quality-progress"><span style={{width:`${quality.complete/Math.max(quality.total,1)*100}%`}} /></div>
+          <div className="quality-grid">
+            {['image','article','ean','hsn','price','model'].map(k => <button key={k} className={`quality-card ${quality[k].count?'warning':''}`} onClick={()=>setQualityFilter(k)}><strong>{quality[k].count}</strong><span>{quality[k].label}</span></button>)}
           </div>
-          {filteredCats.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '30px 10px', fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'var(--ink-soft)' }}>
-              No categories match your search.
-            </div>
-          ) : (
-            <div className="cat-tile-grid">
-              {filteredCats.map(([name, count]) => (
-                <div key={name} className="cat-tile" onClick={() => onGoToCatalog({ category: name })}>
-                  <div className="icon">{categoryIcon(name)}</div>
-                  <div className="name" title={name}>{name}</div>
-                  <div className="count">{count}</div>
-                  <div className="count-lbl">articles</div>
-                </div>
-              ))}
-            </div>
-          )}
+          {qualityFilter!=='all' && <div className="quality-results"><div className="panel-heading-row"><strong>{quality[qualityFilter].label}</strong><button className="text-button" onClick={()=>setQualityFilter('all')}>Clear</button></div>{qualityRows.map(p=><button className="quality-result-row" key={p.id} onClick={()=>onGoToCatalog({search:p.ean||p.description,autoOpen:true})}><span>{p.description||p.model||'Unnamed'}</span><small>{p.ean||'No EAN'} · {p.brand||'No brand'}</small></button>)}</div>}
         </div>
-      )}
 
-      {productsView === 'brands' && (
-        <div className="panel">
-          <h3>Brands <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 10.5, color: 'var(--ink-soft)', fontWeight: 500 }}>{brandCounts.length} brands</span></h3>
-          <div className="panel-hint">Search or click a brand to view its articles</div>
-          <div className="cat-search-box">
-            <input placeholder="Search brands…" value={brandQuery} onChange={(e) => setBrandQuery(e.target.value)} />
-          </div>
-          {filteredBrands.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '30px 10px', fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'var(--ink-soft)' }}>
-              No brands match your search.
-            </div>
-          ) : (
-            <div style={{ maxHeight: 420, overflowY: 'auto' }}>
-              {filteredBrands.map(([b, count], i) => (
-                <div key={b} className="bar-row" onClick={() => onGoToCatalog({ brand: b })}>
-                  <div className="bar-rank">{i + 1}</div>
-                  <div className="bar-label" title={b}>{b}</div>
-                  <div className="bar-track">
-                    <div className="bar-fill" style={{ width: animate ? `${(count / (brandCounts[0]?.[1] || 1) * 100).toFixed(0)}%` : '0%' }} />
-                  </div>
-                  <div className="bar-num">{count}</div>
-                </div>
-              ))}
-            </div>
-          )}
+        <div className="panel glass-panel recent-panel">
+          <div className="panel-heading-row"><div><h3>Recently Added</h3><div className="panel-hint">Newest records first.</div></div><button className="text-button" onClick={()=>onGoToCatalog({})}>View all</button></div>
+          <div className="recent-list">{recent.map(p=><button className="recent-row" key={p.id} onClick={()=>onGoToCatalog({search:p.ean||p.description,autoOpen:true})}><div className="recent-thumb">{p.image_url?<img src={p.image_url} alt=""/>:<span>IMG</span>}</div><div><strong>{p.description||p.model||'Unnamed article'}</strong><small>{p.brand||'—'} · {p.article_no||'No Article No.'}</small></div><b>{p.sp!=null?`₹${p.sp}`:p.mrp!=null?`₹${p.mrp}`:'—'}</b></button>)}</div>
         </div>
-      )}
+      </section>
 
-      {productsView === 'products' && (
-        <div className="panel">
-          <h3>All Products <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 10.5, color: 'var(--ink-soft)', fontWeight: 500 }}>{products.length} total</span></h3>
-          <div className="panel-hint">Search, or click any product to open it in the catalog</div>
-          <div className="cat-search-box">
-            <input placeholder="Search by EAN, brand, category, model or description…" value={productSearchQuery} onChange={(e) => setProductSearchQuery(e.target.value)} />
-          </div>
-          {!productSearchQuery && (
-            <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: 'var(--text-muted)', marginBottom: 10 }}>
-              Showing the first 100 of {products.length} — type to search all of them.
-            </div>
-          )}
-          {filteredAllProducts.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '30px 10px', fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'var(--ink-soft)' }}>
-              No products match your search.
-            </div>
-          ) : (
-            <div style={{ maxHeight: 460, overflowY: 'auto' }}>
-              {filteredAllProducts.map(p => (
-                <div
-                  key={p.id}
-                  className="bar-row"
-                  style={{ justifyContent: 'space-between' }}
-                  onClick={() => onGoToCatalog({ search: p.ean || p.description })}
-                >
-                  <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                    <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {p.description || p.model || 'Unnamed article'}
-                    </span>
-                    <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 11, color: 'var(--text-soft)' }}>{p.brand} · {p.category}</span>
-                  </div>
-                  <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 13, color: 'var(--primary)', flex: 'none', marginLeft: 10 }}>
-                    {p.sp != null ? `₹${p.sp}` : p.mrp != null ? `₹${p.mrp}` : ''}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      <ImageManager products={products} isAuthed={isAuthed} onUpdated={onProductsUpdated} onOpenProduct={p=>onGoToCatalog({search:p.ean||p.description,autoOpen:true})} />
 
-      <div className="panel">
-        <h3>Articles by Month <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 10.5, color: 'var(--ink-soft)', fontWeight: 500 }}>{monthCounts.length} months</span></h3>
-        <div className="panel-hint">Click a month to view its articles</div>
-        <div style={{ maxHeight: 420, overflowY: 'auto' }}>
-          {monthCounts.map(([m, count], i) => (
-            <div key={m} className="bar-row" onClick={() => onGoToCatalog({ month: m })}>
-              <div className="bar-rank">{i + 1}</div>
-              <div className="bar-label" title={formatMonthLabel(m)}>{formatMonthLabel(m)}</div>
-              <div className="bar-track">
-                <div className="bar-fill" style={{ width: animate ? `${(count / monthMax * 100).toFixed(0)}%` : '0%' }} />
-              </div>
-              <div className="bar-num">{count}</div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <section className="dashboard-grid two-equal">
+        <div className="panel glass-panel"><div className="panel-heading-row"><div><h3>Categories</h3><div className="panel-hint">Search and open a category.</div></div></div><div className="smart-search"><span>⌕</span><input placeholder="Search categories…" value={catQuery} onChange={e=>setCatQuery(e.target.value)}/></div><div className="cat-tile-grid compact-tiles">{filteredCats.slice(0,18).map(([name,count])=><button className="cat-tile" key={name} onClick={()=>onGoToCatalog({category:name})}><div className="icon">{categoryIcon(name)}</div><div className="name">{name}</div><div className="count">{count}</div><div className="count-lbl">articles</div></button>)}</div></div>
+        <div className="panel glass-panel"><div className="panel-heading-row"><div><h3>Brands</h3><div className="panel-hint">Highest article counts first.</div></div></div><div className="smart-search"><span>⌕</span><input placeholder="Search brands…" value={brandQuery} onChange={e=>setBrandQuery(e.target.value)}/></div><div className="rank-list">{filteredBrands.slice(0,12).map(([b,count],i)=><button className="rank-row" key={b} onClick={()=>onGoToCatalog({brand:b})}><span>{String(i+1).padStart(2,'0')}</span><strong>{b}</strong><i><em style={{width:`${animate?Math.max(8,count/(brandCounts[0]?.[1]||1)*100):0}%`}}/></i><b>{count}</b></button>)}</div></div>
+      </section>
 
-      <div style={{ margin: '36px 0 22px' }}>
-        <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 24, margin: 0 }}>Garments</h2>
-        <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'var(--ink-soft)', marginTop: 4 }}>
-          Separate dataset from the article catalog above.
-        </div>
-      </div>
+      <section className="panel glass-panel"><div className="panel-heading-row"><div><h3>Articles by Month</h3><div className="panel-hint">Latest production/import periods first.</div></div></div><div className="rank-list">{monthCounts.slice(0,12).map(([m,count],i)=><button className="rank-row" key={m} onClick={()=>onGoToCatalog({month:m})}><span>{String(i+1).padStart(2,'0')}</span><strong>{formatMonthLabel(m)}</strong><i><em style={{width:`${animate?count/Math.max(...monthCounts.map(x=>x[1]),1)*100:0}%`}}/></i><b>{count}</b></button>)}</div></section>
 
-      <div className="stat-cards">
-        <div className="stat-card"><div className="num">{(garments || []).length}</div><div className="lbl">Total Garments</div></div>
-        <div className="stat-card teal"><div className="num">{garmentStyles.length}</div><div className="lbl">Styles</div></div>
-        <div className="stat-card"><div className="num">{garmentBrands.length}</div><div className="lbl">Brands</div></div>
-      </div>
-
-      <div className="panel">
-        <h3>Garment Styles <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 10.5, color: 'var(--ink-soft)', fontWeight: 500 }}>{garmentStyleCounts.length} styles</span></h3>
-        <div className="panel-hint">Search or click a style to view its garments</div>
-        <div className="cat-search-box">
-          <input placeholder="Search styles…" value={styleQuery} onChange={(e) => setStyleQuery(e.target.value)} />
-        </div>
-        {filteredStyles.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '30px 10px', fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'var(--ink-soft)' }}>
-            {garmentStyleCounts.length === 0 ? 'No garment data yet.' : 'No styles match your search.'}
-          </div>
-        ) : (
-          <div className="cat-tile-grid">
-            {filteredStyles.map(([name, count]) => (
-              <div key={name} className="cat-tile" onClick={() => onGoToGarments({ modelName: name })}>
-                <div className="icon">{garmentTypeIcon(name)}</div>
-                <div className="name" title={name}>{name || 'Unspecified'}</div>
-                <div className="count">{count}</div>
-                <div className="count-lbl">garments</div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="panel">
-        <h3>Garments by Brand <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 10.5, color: 'var(--ink-soft)', fontWeight: 500 }}>{garmentBrandCounts.length} brands</span></h3>
-        <div className="panel-hint">Click a brand to view its garments</div>
-        {garmentBrandCounts.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '30px 10px', fontFamily: "'Inter',sans-serif", fontSize: 12, color: 'var(--ink-soft)' }}>
-            No garment data yet.
-          </div>
-        ) : (
-          <div style={{ maxHeight: 420, overflowY: 'auto' }}>
-            {garmentBrandCounts.map(([b, count], i) => (
-              <div key={b} className="bar-row" onClick={() => onGoToGarments({ brand: b })}>
-                <div className="bar-rank">{i + 1}</div>
-                <div className="bar-label" title={b}>{b}</div>
-                <div className="bar-track">
-                  <div className="bar-fill teal" style={{ width: animate ? `${(count / garmentBrandMax * 100).toFixed(0)}%` : '0%' }} />
-                </div>
-                <div className="bar-num">{count}</div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <div className="section-title-row"><div><h2>Garments</h2><p>Separate garment master with style and brand navigation.</p></div><button className="btn btn-teal" onClick={()=>onGoToGarments({})}>Open Garments</button></div>
+      <section className="dashboard-metrics compact"><div className="metric-card"><strong>{garments.length}</strong><span>Rows</span></div><div className="metric-card"><strong>{garmentStyles.length}</strong><span>Styles</span></div><div className="metric-card"><strong>{garmentBrands.length}</strong><span>Brands</span></div></section>
+      <section className="dashboard-grid two-equal"><div className="panel glass-panel"><h3>Top Garment Styles</h3><div className="cat-tile-grid compact-tiles">{garmentStyleCounts.slice(0,12).map(([name,count])=><button className="cat-tile" key={name} onClick={()=>onGoToGarments({modelName:name})}><div className="icon">{garmentTypeIcon(name)}</div><div className="name">{name||'Unspecified'}</div><div className="count">{count}</div><div className="count-lbl">rows</div></button>)}</div></div><div className="panel glass-panel"><h3>Garment Brands</h3><div className="rank-list">{garmentBrandCounts.slice(0,12).map(([b,count],i)=><button className="rank-row" key={b} onClick={()=>onGoToGarments({brand:b})}><span>{String(i+1).padStart(2,'0')}</span><strong>{b}</strong><i><em style={{width:`${count/Math.max(garmentBrandCounts[0]?.[1]||1,1)*100}%`}}/></i><b>{count}</b></button>)}</div></div></section>
     </div>
   );
 }
