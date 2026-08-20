@@ -384,33 +384,34 @@ footer{ text-align:center; padding:30px 20px 44px; font-family:'Inter', sans-ser
   .floating-tools{ right:16px; bottom:16px; gap:8px; }
 }
 
-/* Floating calculator button: stays accessible even while a product/garment modal is open. */
+/* Floating calculator button: icon-only, accessible even while a product/garment modal is open. */
 .calculator-float-btn{
-  min-width:48px;
-  height:48px;
-  padding:0 13px;
+  width:52px;
+  min-width:52px;
+  height:52px;
+  padding:0;
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  gap:6px;
   border:1px solid var(--border-strong);
-  border-radius:999px;
+  border-radius:50%;
   background:var(--surface);
-  color:var(--primary);
+  color:#171717;
   box-shadow:var(--shadow-lg);
   cursor:pointer;
-  font-family:'Inter',sans-serif;
-  font-size:13px;
-  font-weight:600;
   transition:transform .15s ease, background .15s ease, color .15s ease;
 }
 .calculator-float-btn:hover{
-  background:var(--primary);
-  color:#fff;
+  background:var(--surface);
+  color:#111;
   transform:translateY(-2px);
 }
-.calculator-float-btn > span:first-child{ font-size:19px; line-height:1; }
-.calculator-float-label{ line-height:1; }
+.calculator-float-icon{
+  width:42px;
+  height:42px;
+  display:block;
+}
+.calculator-float-label{ display:none !important; }
 
 /* ---------- Global calculator ---------- */
 .calculator-overlay{
@@ -477,7 +478,7 @@ footer{ text-align:center; padding:30px 20px 44px; font-family:'Inter', sans-ser
 }
 
 @media (max-width:600px){
-  .calculator-float-label{ display:none; }
   .floating-tools{ right:16px; bottom:16px; gap:8px; }
-  .calculator-float-btn{ width:46px; min-width:46px; height:46px; padding:0; }
+  .calculator-float-btn{ width:48px; min-width:48px; height:48px; }
+  .calculator-float-icon{ width:40px; height:40px; }
 }

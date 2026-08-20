@@ -368,8 +368,17 @@ function AppInner() {
           title="Open calculator"
           aria-label="Open calculator"
         >
-          <span aria-hidden="true">🧮</span>
-          <span className="calculator-float-label">Calculator</span>
+          <svg className="calculator-float-icon" viewBox="0 0 48 48" aria-hidden="true">
+            <rect x="8" y="4" width="32" height="40" rx="7" fill="currentColor"/>
+            <rect x="12.5" y="9" width="23" height="8" rx="2.5" fill="var(--calc-display, #666)"/>
+            <circle cx="16" cy="24" r="3.2" fill="#f4f4f4"/>
+            <circle cx="24" cy="24" r="3.2" fill="#f4f4f4"/>
+            <circle cx="32" cy="24" r="3.2" fill="#f59a00"/>
+            <circle cx="16" cy="32" r="3.2" fill="#f4f4f4"/>
+            <circle cx="24" cy="32" r="3.2" fill="#f4f4f4"/>
+            <circle cx="32" cy="32" r="3.2" fill="#f59a00"/>
+            <rect x="12.8" y="37" width="18.2" height="4.2" rx="2.1" fill="#f4f4f4"/>
+          </svg>
         </button>
       </div>
 
