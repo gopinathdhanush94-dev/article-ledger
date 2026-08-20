@@ -536,3 +536,54 @@ header{background:rgba(255,255,255,.68);backdrop-filter:blur(18px);-webkit-backd
 @media(max-width:900px){.dashboard-grid,.dashboard-grid.two-equal{grid-template-columns:1fr}.dashboard-metrics{grid-template-columns:repeat(2,1fr)}.product-modal-hero{grid-template-columns:1fr}.product-modal-image{min-height:260px}.product-modal-image img,.image-placeholder-large{height:260px}.product-modal-summary{padding:22px}.detail-grid{grid-template-columns:1fr}.editor-header{padding:20px}.editor-section,.editor-media-section{padding:20px}.editor-footer{padding:14px 20px}.dashboard-hero{align-items:flex-start;flex-direction:column}}
 @media(max-width:640px){body{font-size:14px}.header-inner{align-items:flex-start}.header-actions .who{display:none}header{padding:12px 14px 0}.brand-icon{width:38px;height:38px}nav.tabs button{padding:11px 12px}.dashboard-hero{padding:20px;border-radius:18px}.dashboard-hero h2{font-size:24px}.hero-actions{width:100%}.hero-actions .btn{flex:1}.dashboard-metrics{grid-template-columns:1fr 1fr;gap:9px}.metric-card{min-height:96px;padding:14px}.metric-card strong{font-size:24px}.quality-grid{grid-template-columns:1fr 1fr}.compact-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.section-title-row{align-items:flex-start;flex-direction:column}.search-box-enhanced{min-height:48px}.controls{padding:10px 14px}.controls-row{gap:8px}.product-modal{max-height:96vh;border-radius:18px}.product-modal-image{min-height:220px;padding:16px}.product-modal-image img,.image-placeholder-large{height:220px}.product-modal-summary{padding:18px}.product-modal-summary .modal-title{font-size:22px}.product-quick-grid{grid-template-columns:1fr 1fr}.product-modal-content{padding:0 16px 18px}.product-modal-actions{flex-wrap:wrap}.product-modal-actions .btn{flex:1;min-width:120px}.editor-header{flex-direction:column}.editor-status{align-self:flex-start}.editor-tabs{padding:0 8px}.editor-tabs button{padding:11px 12px}.editor-section,.editor-media-section{padding:18px 16px}.commercial-preview{grid-template-columns:1fr}.editor-footer{padding:12px 16px;display:flex;flex-direction:column;gap:10px}.editor-footer>button,.editor-footer-right{width:100%}.editor-footer-right .btn{flex:1}.editor-drop{flex-direction:column;align-items:stretch}.large-preview{width:100%!important;height:240px!important}.image-manager-row{grid-template-columns:38px minmax(0,1fr) auto}.missing-thumb{width:38px;height:38px}.compact-upload{padding:8px 10px}.rank-row{grid-template-columns:24px minmax(70px,1fr) 60px 36px}.rank-row>i{display:block}.scroll-top-btn{width:46px;min-width:46px;height:46px}.calculator-float-btn{width:48px;min-width:48px;height:48px}}
 @media(prefers-reduced-motion:reduce){.metric-card,.card,.rank-row>i em{transition:none!important}}
+
+/* ---------- Header data-quality launcher ---------- */
+.header-tool-btn{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  border:1px solid rgba(13,148,136,.28);
+  background:rgba(255,255,255,.62);
+  color:var(--teal-hover);
+  padding:8px 12px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:650;
+  cursor:pointer;
+  box-shadow:0 4px 14px rgba(15,23,42,.06);
+  backdrop-filter:blur(12px);
+  transition:transform .15s ease, background .15s ease, box-shadow .15s ease;
+}
+.header-tool-btn > span:first-child{
+  width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+  background:var(--teal-soft);color:var(--teal);font-size:12px;font-weight:800;
+}
+.header-tool-btn:hover{transform:translateY(-1px);background:rgba(230,247,245,.9);box-shadow:0 8px 20px rgba(15,23,42,.09)}
+
+/* ---------- Data Quality modal ---------- */
+.quality-overlay{position:fixed;inset:0;z-index:160;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.42);backdrop-filter:blur(6px)}
+.quality-modal{width:min(760px,100%);max-height:min(86vh,760px);overflow:auto;position:relative;padding:28px;border:1px solid rgba(255,255,255,.7);background:rgba(255,255,255,.78);box-shadow:0 28px 80px rgba(15,23,42,.22);border-radius:24px}
+.quality-modal-header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;padding-right:42px}
+.quality-modal-header h2{font-family:'Space Grotesk',sans-serif;font-size:28px;letter-spacing:-.03em;margin:4px 0 6px;color:var(--text)}
+.quality-modal-header p{margin:0;color:var(--text-soft);font-size:13px;line-height:1.55;max-width:540px}
+.quality-score.large{min-width:88px;padding:11px 13px;border:1px solid rgba(220,38,38,.15);border-radius:16px;background:rgba(254,242,242,.8);display:flex;flex-direction:column;align-items:center;gap:1px;color:var(--danger)}
+.quality-score.large.good{background:rgba(230,247,245,.82);border-color:rgba(13,148,136,.18);color:var(--teal)}
+.quality-score.large strong{font-family:'Space Grotesk',sans-serif;font-size:25px;line-height:1}
+.quality-score.large span{font-size:10px;text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+.quality-progress.large{height:9px;margin:20px 0;border-radius:999px;background:rgba(226,232,240,.9);overflow:hidden}
+.quality-progress.large span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--primary),var(--teal));transition:width .25s ease}
+.modal-quality-grid{grid-template-columns:repeat(3,1fr);margin-top:8px}
+.quality-card.selected{border-color:var(--teal);box-shadow:0 0 0 2px rgba(13,148,136,.12)}
+.quality-summary-note{margin-top:16px;padding:14px 16px;border-radius:14px;background:rgba(248,250,252,.8);border:1px solid var(--border);color:var(--text-soft);font-size:12px}
+.quality-summary-note strong{color:var(--text)}
+.modal-quality-results{max-height:310px}
+@media(max-width:640px){
+  .header-tool-btn span:last-child{display:none}
+  .header-tool-btn{width:38px;height:38px;padding:0;justify-content:center}
+  .quality-modal{padding:20px;border-radius:20px;max-height:90vh}
+  .quality-modal-header{gap:10px}
+  .quality-modal-header h2{font-size:23px}
+  .quality-score.large{min-width:72px;padding:9px}
+  .quality-score.large strong{font-size:21px}
+  .modal-quality-grid{grid-template-columns:1fr 1fr}
+}

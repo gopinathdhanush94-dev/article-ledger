@@ -10,6 +10,7 @@ import AddProductForm from './components/AddProductForm.jsx';
 import Garments from './components/Garments.jsx';
 import GarmentForm from './components/GarmentForm.jsx';
 import Calculator from './components/Calculator.jsx';
+import DataQualityCenter from './components/DataQualityCenter.jsx';
 
 const BrandIconSVG = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -68,6 +69,7 @@ function AppInner() {
   const [showLogin, setShowLogin] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
   const [showCalculator, setShowCalculator] = useState(false);
+  const [showDataQuality, setShowDataQuality] = useState(false);
 
   const [garments, setGarments] = useState([]);
   const [garmentsLoading, setGarmentsLoading] = useState(true);
@@ -264,6 +266,16 @@ function AppInner() {
             </div>
           </button>
           <div className="header-actions">
+            <button
+              type="button"
+              className="header-tool-btn"
+              onClick={() => setShowDataQuality(true)}
+              title="Open Data Quality Center"
+              aria-label="Open Data Quality Center"
+            >
+              <span aria-hidden="true">✓</span>
+              <span>Data Quality</span>
+            </button>
             {isAuthed ? (
               <>
                 <span className="who">Signed in</span>
@@ -305,7 +317,7 @@ function AppInner() {
       {hasLoadedOnce && (
         <>
           <div style={{ display: view === 'home' ? 'block' : 'none' }}>
-            <Home products={products} garments={garments} isAuthed={isAuthed} onProductsUpdated={loadProducts} onGoToCatalog={goToCatalog} onGoToGarments={goToGarments} />
+            <Home products={products} garments={garments} onGoToCatalog={goToCatalog} onGoToGarments={goToGarments} />
           </div>
           <div style={{ display: view === 'catalog' ? 'block' : 'none' }}>
             <Catalog
@@ -383,6 +395,13 @@ function AppInner() {
       </div>
 
       <Calculator open={showCalculator} onClose={() => setShowCalculator(false)} />
+
+      <DataQualityCenter
+        open={showDataQuality}
+        onClose={() => setShowDataQuality(false)}
+        products={products}
+        onGoToCatalog={goToCatalog}
+      />
 
       {showLogin && (
         <LoginModal

@@ -1,20 +1,15 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { formatMonthLabel, normalizeMonthValue, monthSortKey, categoryIcon, garmentTypeIcon, uniqueSorted } from '../lib/helpers.js';
-import ImageManager from './ImageManager.jsx';
 
 function recentProducts(products) {
   return [...products].sort((a,b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)).slice(0, 8);
 }
-function completeProduct(p) {
-  const required = ['description','category','brand','model','ean','hsn','article_no','image_url','mrp','sp'];
-  return required.every(k => p[k] !== null && p[k] !== undefined && String(p[k]).trim() !== '');
-}
 
-export default function Home({ products, garments, onGoToCatalog, onGoToGarments, isAuthed, onProductsUpdated }) {
+
+export default function Home({ products, garments, onGoToCatalog, onGoToGarments }) {
   const [catQuery, setCatQuery] = useState('');
   const [brandQuery, setBrandQuery] = useState('');
   const [animate, setAnimate] = useState(false);
-  const [qualityFilter, setQualityFilter] = useState('all');
   useEffect(() => { const t = setTimeout(() => setAnimate(true), 30); return () => clearTimeout(t); }, [products, garments]);
 
   const categories = uniqueSorted(products, 'category');
@@ -29,26 +24,6 @@ export default function Home({ products, garments, onGoToCatalog, onGoToGarments
   }, [products]);
   const recent = useMemo(()=>recentProducts(products),[products]);
 
-  const quality = useMemo(() => {
-    const checks = [
-      ['image','Missing Images', p => !p.image_url],
-      ['article','Missing Article No.', p => !p.article_no],
-      ['ean','Missing EAN', p => !p.ean],
-      ['hsn','Missing HSN', p => !p.hsn],
-      ['price','Missing Price', p => p.mrp == null && p.sp == null],
-      ['model','Missing Model', p => !p.model],
-    ];
-    const out = Object.fromEntries(checks.map(([k,l,fn])=>[k,{label:l,count:products.filter(fn).length}]));
-    const complete = products.filter(completeProduct).length;
-    return { ...out, complete, total: products.length };
-  }, [products]);
-  const qualityRows = useMemo(() => {
-    const fn = {
-      image:p=>!p.image_url, article:p=>!p.article_no, ean:p=>!p.ean, hsn:p=>!p.hsn, price:p=>p.mrp==null&&p.sp==null, model:p=>!p.model,
-    };
-    if (qualityFilter==='all') return [];
-    return products.filter(fn[qualityFilter] || (()=>false)).slice(0,100);
-  }, [products, qualityFilter]);
 
   const garmentBrands = uniqueSorted(garments || [], 'brand');
   const garmentStyles = uniqueSorted(garments || [], 'model_name');
@@ -77,14 +52,6 @@ export default function Home({ products, garments, onGoToCatalog, onGoToGarments
       </section>
 
       <section className="dashboard-grid">
-        <div className="panel glass-panel quality-panel">
-          <div className="panel-heading-row"><div><h3>Data Quality Center</h3><div className="panel-hint">Click a problem to review the affected records.</div></div><span className={`quality-score ${quality.complete/Math.max(quality.total,1)>.9?'good':''}`}>{Math.round(quality.complete/Math.max(quality.total,1)*100)}% complete</span></div>
-          <div className="quality-progress"><span style={{width:`${quality.complete/Math.max(quality.total,1)*100}%`}} /></div>
-          <div className="quality-grid">
-            {['image','article','ean','hsn','price','model'].map(k => <button key={k} className={`quality-card ${quality[k].count?'warning':''}`} onClick={()=>setQualityFilter(k)}><strong>{quality[k].count}</strong><span>{quality[k].label}</span></button>)}
-          </div>
-          {qualityFilter!=='all' && <div className="quality-results"><div className="panel-heading-row"><strong>{quality[qualityFilter].label}</strong><button className="text-button" onClick={()=>setQualityFilter('all')}>Clear</button></div>{qualityRows.map(p=><button className="quality-result-row" key={p.id} onClick={()=>onGoToCatalog({search:p.ean||p.description,autoOpen:true})}><span>{p.description||p.model||'Unnamed'}</span><small>{p.ean||'No EAN'} · {p.brand||'No brand'}</small></button>)}</div>}
-        </div>
 
         <div className="panel glass-panel recent-panel">
           <div className="panel-heading-row"><div><h3>Recently Added</h3><div className="panel-hint">Newest records first.</div></div><button className="text-button" onClick={()=>onGoToCatalog({})}>View all</button></div>
@@ -92,7 +59,7 @@ export default function Home({ products, garments, onGoToCatalog, onGoToGarments
         </div>
       </section>
 
-      <ImageManager products={products} isAuthed={isAuthed} onUpdated={onProductsUpdated} onOpenProduct={p=>onGoToCatalog({search:p.ean||p.description,autoOpen:true})} />
+
 
       <section className="dashboard-grid two-equal">
         <div className="panel glass-panel"><div className="panel-heading-row"><div><h3>Categories</h3><div className="panel-hint">Search and open a category.</div></div></div><div className="smart-search"><span>⌕</span><input placeholder="Search categories…" value={catQuery} onChange={e=>setCatQuery(e.target.value)}/></div><div className="cat-tile-grid compact-tiles">{filteredCats.slice(0,18).map(([name,count])=><button className="cat-tile" key={name} onClick={()=>onGoToCatalog({category:name})}><div className="icon">{categoryIcon(name)}</div><div className="name">{name}</div><div className="count">{count}</div><div className="count-lbl">articles</div></button>)}</div></div>
