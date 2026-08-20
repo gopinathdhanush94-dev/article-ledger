@@ -264,9 +264,6 @@ function AppInner() {
             </div>
           </button>
           <div className="header-actions">
-            <button className="btn calculator-trigger" type="button" onClick={() => setShowCalculator(true)} title="Open calculator" aria-label="Open calculator">
-              <span aria-hidden="true">🧮</span> Calculator
-            </button>
             {isAuthed ? (
               <>
                 <span className="who">Signed in</span>
@@ -362,7 +359,19 @@ function AppInner() {
 
       <footer>Article Ledger — built with React + Supabase</footer>
 
-      <ScrollToTopButton />
+      <div className="floating-tools" aria-label="Quick tools">
+        <ScrollToTopButton />
+        <button
+          type="button"
+          className="calculator-float-btn"
+          onClick={() => setShowCalculator(true)}
+          title="Open calculator"
+          aria-label="Open calculator"
+        >
+          <span aria-hidden="true">🧮</span>
+          <span className="calculator-float-label">Calculator</span>
+        </button>
+      </div>
 
       <Calculator open={showCalculator} onClose={() => setShowCalculator(false)} />
 
