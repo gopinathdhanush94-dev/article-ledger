@@ -38,7 +38,7 @@ export default function Home({ products, garments, onGoToCatalog, onGoToGarments
       ['price','Missing Price', p => p.mrp == null && p.sp == null],
       ['model','Missing Model', p => !p.model],
     ];
-    const out = Object.fromEntries(checks.map(([k,l])=>[k,{label:l,count:products.filter(c=>c[2](p)).length}]));
+    const out = Object.fromEntries(checks.map(([k,l,fn])=>[k,{label:l,count:products.filter(fn).length}]));
     const complete = products.filter(completeProduct).length;
     return { ...out, complete, total: products.length };
   }, [products]);
