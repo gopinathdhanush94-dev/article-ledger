@@ -1,21 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { formatMonthLabel, normalizeMonthValue, monthSortKey, categoryIcon, garmentTypeIcon, uniqueSorted } from '../lib/helpers.js';
 
-function getTimeOfDay(date = new Date()) {
-  const hour = date.getHours();
-  if (hour < 12) return 'morning';
-  if (hour < 17) return 'afternoon';
-  if (hour < 21) return 'evening';
-  return 'night';
-}
-
-const GREETING = {
-  morning: 'Good morning',
-  afternoon: 'Good afternoon',
-  evening: 'Good evening',
-  night: 'Good night',
-};
-
 function recentProducts(products) {
   return [...products].sort((a,b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)).slice(0, 8);
 }
@@ -25,14 +10,7 @@ export default function Home({ products, garments, onGoToCatalog, onGoToGarments
   const [catQuery, setCatQuery] = useState('');
   const [brandQuery, setBrandQuery] = useState('');
   const [animate, setAnimate] = useState(false);
-  const [timeOfDay, setTimeOfDay] = useState(() => getTimeOfDay());
   useEffect(() => { const t = setTimeout(() => setAnimate(true), 30); return () => clearTimeout(t); }, [products, garments]);
-  useEffect(() => {
-    const tick = () => setTimeOfDay(getTimeOfDay());
-    const id = setInterval(tick, 60 * 1000);
-    tick();
-    return () => clearInterval(id);
-  }, []);
 
   const categories = uniqueSorted(products, 'category');
   const brands = uniqueSorted(products, 'brand');
@@ -53,11 +31,11 @@ export default function Home({ products, garments, onGoToCatalog, onGoToGarments
   const garmentBrandCounts = useMemo(()=>Object.entries((garments||[]).reduce((a,g)=>(a[g.brand]=(a[g.brand]||0)+1,a),{})).sort((a,b)=>b[1]-a[1]),[garments]);
 
   return (
-    <div className={`home-wrap home-${timeOfDay}`}>
+    <div className="home-wrap">
       <section className="dashboard-hero glass-panel">
         <div>
           <span className="eyebrow">PRODUCT CONTROL CENTER</span>
-          <h2>{GREETING[timeOfDay]}. Here’s your catalogue at a glance.</h2>
+          <h2>Good morning. Here’s your catalogue at a glance.</h2>
           <p>Search, maintain and publish your product master from one place.</p>
         </div>
         <div className="hero-actions">
