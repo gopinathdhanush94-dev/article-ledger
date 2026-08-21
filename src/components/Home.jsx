@@ -5,11 +5,34 @@ function recentProducts(products) {
   return [...products].sort((a,b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)).slice(0, 8);
 }
 
+function getGreeting(date = new Date()) {
+  const hour = date.getHours();
+  if (hour >= 5 && hour < 12) return 'Good morning';
+  if (hour >= 12 && hour < 17) return 'Good afternoon';
+  if (hour >= 17 && hour < 21) return 'Good evening';
+  return 'Good night';
+}
+
 
 export default function Home({ products, garments, onGoToCatalog, onGoToGarments }) {
   const [catQuery, setCatQuery] = useState('');
   const [brandQuery, setBrandQuery] = useState('');
   const [animate, setAnimate] = useState(false);
+  const [greeting, setGreeting] = useState(() => getGreeting());
+
+  useEffect(() => {
+    const updateGreeting = () => setGreeting(getGreeting());
+    updateGreeting();
+    const timer = setInterval(updateGreeting, 30000);
+    window.addEventListener('focus', updateGreeting);
+    document.addEventListener('visibilitychange', updateGreeting);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('focus', updateGreeting);
+      document.removeEventListener('visibilitychange', updateGreeting);
+    };
+  }, []);
+
   useEffect(() => { const t = setTimeout(() => setAnimate(true), 30); return () => clearTimeout(t); }, [products, garments]);
 
   const categories = uniqueSorted(products, 'category');
@@ -35,7 +58,7 @@ export default function Home({ products, garments, onGoToCatalog, onGoToGarments
       <section className="dashboard-hero glass-panel">
         <div>
           <span className="eyebrow">PRODUCT CONTROL CENTER</span>
-          <h2>Good morning. Here’s your catalogue at a glance.</h2>
+          <h2>{greeting}. Here’s your catalogue at a glance.</h2>
           <p>Search, maintain and publish your product master from one place.</p>
         </div>
         <div className="hero-actions">
