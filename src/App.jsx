@@ -136,14 +136,31 @@ function AppInner() {
   const loadGarments = useCallback(async () => {
     setGarmentsLoading(true);
     try {
-      const data = await fetchAllRows('garments');
-      setGarments(data);
+      // Load garments independently of the General article list.
+      // Avoid ordering by created_at here because some existing garment
+      // tables may have been created by an older schema.
+      const pageSize = 1000;
+      let all = [];
+      let from = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from('garments')
+          .select('*')
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        all = all.concat(data || []);
+        if (!data || data.length < pageSize) break;
+        from += pageSize;
+      }
+      setGarments(all);
       setGarmentsError(null);
       setGarmentsHasLoadedOnce(true);
     } catch (err) {
-      setGarmentsError(err.message);
+      console.error('Garment load failed:', err);
+      setGarmentsError(err.message || 'Unable to load garment data');
+    } finally {
+      setGarmentsLoading(false);
     }
-    setGarmentsLoading(false);
   }, []);
 
   useEffect(() => { loadProducts(); loadGarments(); }, [loadProducts, loadGarments]);
