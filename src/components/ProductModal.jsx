@@ -46,18 +46,21 @@ export default function ProductModal({product:p,isAuthed,onClose,onEdit,onDelete
     ['Marketed By',p.marketed_by]
   ];
 
-  // First packaging row is designed for the quantities and their calculated carton MRP.
-  const logistics=[
-    ['Master Ctn Qty',p.master_qty],
-    ['Inner Ctn Qty',p.inner_qty],
-    ['Master Ctn MRP',cartonMrp(p.master_qty,p.mrp)],
-    ['Inner Ctn MRP',cartonMrp(p.inner_qty,p.mrp)],
-    ['SKU Dimensions',dims(p.sku_l,p.sku_w,p.sku_h,p.sku_dim_unit)],
-    ['SKU Weight',wt(p.sku_nw,p.sku_gw,p.sku_wt_unit)],
-    ['Master Ctn Dimensions',dims(p.master_l,p.master_w,p.master_h,p.master_dim_unit)],
-    ['Master Ctn Weight',wt(p.master_nw,p.master_gw,p.master_wt_unit)],
-    ['Inner Ctn Dimensions',dims(p.inner_l,p.inner_w,p.inner_h,p.inner_dim_unit)],
-    ['Inner Ctn Weight',wt(p.inner_nw,p.inner_gw,p.inner_wt_unit)]
+  const masterCarton = [
+    ['Quantity', p.master_qty],
+    ['Master Carton MRP', cartonMrp(p.master_qty,p.mrp)],
+    ['Dimensions', dims(p.master_l,p.master_w,p.master_h,p.master_dim_unit)],
+    ['Net / Gross Weight', wt(p.master_nw,p.master_gw,p.master_wt_unit)]
+  ];
+  const innerCarton = [
+    ['Quantity', p.inner_qty],
+    ['Inner Carton MRP', cartonMrp(p.inner_qty,p.mrp)],
+    ['Dimensions', dims(p.inner_l,p.inner_w,p.inner_h,p.inner_dim_unit)],
+    ['Net / Gross Weight', wt(p.inner_nw,p.inner_gw,p.inner_wt_unit)]
+  ];
+  const skuDetails = [
+    ['SKU Dimensions', dims(p.sku_l,p.sku_w,p.sku_h,p.sku_dim_unit)],
+    ['SKU Net / Gross Weight', wt(p.sku_nw,p.sku_gw,p.sku_wt_unit)]
   ];
 
   return <div className="overlay product-overlay" onMouseDown={e=>{if(e.target===e.currentTarget)onClose();}}>
@@ -104,9 +107,39 @@ export default function ProductModal({product:p,isAuthed,onClose,onEdit,onDelete
                 <InfoCard label="Discount" value={off?`${off}%`:'—'}/>
               </div>
 
-              <div className="compact-section-label">PACKAGING & LOGISTICS</div>
-              <div className="compact-info-grid logistics-grid">
-                {logistics.map(([label,val],i)=><InfoCard key={label} label={label} value={val} accent={i===2||i===3}/>) }
+              <div className="compact-section-label packaging-title">PACKAGING & LOGISTICS</div>
+
+              <div className="carton-panel master-carton-panel">
+                <div className="carton-panel-heading">
+                  <div>
+                    <strong>Master Carton</strong>
+                    <span>Outer carton summary</span>
+                  </div>
+                  <span className="carton-badge">MASTER</span>
+                </div>
+                <div className="carton-grid">
+                  {masterCarton.map(([label,val],i)=><InfoCard key={label} label={label} value={val} accent={i===1}/>)}
+                </div>
+              </div>
+
+              <div className="carton-panel inner-carton-panel">
+                <div className="carton-panel-heading">
+                  <div>
+                    <strong>Inner Carton</strong>
+                    <span>Inner pack summary</span>
+                  </div>
+                  <span className="carton-badge inner">INNER</span>
+                </div>
+                <div className="carton-grid">
+                  {innerCarton.map(([label,val],i)=><InfoCard key={label} label={label} value={val} accent={i===1}/>)}
+                </div>
+              </div>
+
+              <div className="sku-panel">
+                <div className="sku-panel-heading">SKU / UNIT DETAILS</div>
+                <div className="sku-grid">
+                  {skuDetails.map(([label,val])=><InfoCard key={label} label={label} value={val}/>)}
+                </div>
               </div>
             </div>
 
