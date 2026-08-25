@@ -766,3 +766,24 @@ header{background:rgba(255,255,255,.68);backdrop-filter:blur(18px);-webkit-backd
   .product-modal-compact .product-price-block .product-price .sp{font-size:34px;}
   .product-modal-compact .compact-all-details{overflow:visible;}
 }
+
+/* ---------- Product details viewport fit & price/weight polish ---------- */
+.product-modal-compact .modal-close{z-index:20;}
+.product-modal-compact .product-price-block{padding-right:58px;}
+.product-modal-compact .product-price-block .product-price{min-height:52px;}
+.product-modal-compact .product-price-block .off-badge{position:relative;z-index:2;}
+.product-modal-compact .product-modal-layout{height:min(760px,calc(100vh - 28px));}
+.product-modal-compact .product-modal-main{min-height:0;display:flex;flex-direction:column;overflow:hidden;}
+.product-modal-compact .compact-all-details{flex:1 1 auto;min-height:0;overflow:visible;}
+.product-modal-compact .carton-grid .compact-info-card strong{font-size:10px;letter-spacing:-.025em;}
+.product-modal-compact .carton-grid .compact-info-card{overflow:hidden;}
+.product-modal-compact .compact-actions{flex:0 0 auto;margin-top:7px!important;}
+@media(max-width:1050px){
+  .product-modal-compact .product-price-block{padding-right:54px;}
+  .product-modal-compact .carton-grid .compact-info-card strong{font-size:10px;}
+}
+@media(max-width:760px){
+  .product-modal-compact .product-price-block{padding-right:0;}
+  .product-modal-compact .product-modal-layout{height:auto;max-height:calc(100vh - 24px);}
+  .product-modal-compact .product-modal-main{overflow:auto;}
+}
