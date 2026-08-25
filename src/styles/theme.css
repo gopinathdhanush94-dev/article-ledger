@@ -1029,3 +1029,70 @@ header{background:rgba(255,255,255,.68);backdrop-filter:blur(18px);-webkit-backd
   .pd-selling-price{font-size:44px;}
   .pd-carton-row{grid-template-columns:1fr 1.25fr 1.3fr 1.2fr;}
 }
+
+/* =========================================================
+   PRODUCT DETAILS — COMPACT BALANCED LAYOUT
+   Removes unused vertical space while preserving the approved
+   specification-sheet design.
+   ========================================================= */
+@media(min-width:761px){
+  .pd-shell{
+    height:auto;
+    max-height:calc(100vh - 36px);
+    align-items:center;
+  }
+  .pd-modal{
+    height:auto;
+    max-height:calc(100vh - 36px);
+  }
+  .pd-layout{
+    height:auto;
+    min-height:0;
+    align-items:stretch;
+  }
+  .pd-sidebar{
+    padding:20px 18px 16px;
+  }
+  .pd-image-card{
+    height:285px;
+  }
+  .pd-sidebar-meta{
+    margin-top:8px;
+  }
+  .pd-sidebar-meta .pd-data-item{
+    padding:8px 2px;
+  }
+  .pd-main{
+    padding:18px 20px 14px;
+    overflow:visible;
+  }
+  .pd-content{
+    overflow:visible;
+  }
+  .pd-section{margin-top:9px;}
+  .pd-packaging{margin-top:9px;}
+  .pd-carton-section{margin-top:5px;padding:7px 8px 8px;}
+  .pd-carton-row .pd-data-item{padding:8px 10px;}
+  .pd-sku-section{margin-top:7px;padding:8px 9px;}
+  .pd-actions{
+    margin-top:10px !important;
+    padding-top:0 !important;
+  }
+}
+
+@media(max-height:780px) and (min-width:761px){
+  .pd-shell,.pd-modal{max-height:calc(100vh - 20px);}
+  .pd-sidebar{padding-top:14px;padding-bottom:12px;}
+  .pd-image-card{height:245px;}
+  .pd-main{padding-top:12px;padding-bottom:10px;}
+  .pd-header{padding-bottom:7px;}
+  .pd-title-area h2{font-size:27px;}
+  .pd-selling-price{font-size:46px;}
+  .pd-section{margin-top:6px;}
+  .pd-packaging{margin-top:7px;}
+  .pd-carton-section{padding:5px 7px 6px;margin-top:4px;}
+  .pd-carton-header{padding-bottom:3px;}
+  .pd-carton-row .pd-data-item{padding:6px 8px;}
+  .pd-sku-section{margin-top:5px;padding:6px 8px;}
+  .pd-actions{margin-top:7px !important;}
+}
