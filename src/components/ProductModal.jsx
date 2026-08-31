@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from '../supabaseClient.js';
 import { fmtINR, discountPct, formatMonthLabel } from '../lib/helpers.js';
 
@@ -271,21 +272,34 @@ export default function ProductModal({ product: p, isAuthed, onClose, onEdit, on
                 </div>
               )}
 
-              {showImageViewer && p.image_url && (
+              {showImageViewer && p.image_url && createPortal(
                 <div
                   className="pd-image-viewer"
                   role="dialog"
                   aria-modal="true"
                   aria-label="Product image viewer"
-                  onMouseDown={(e) => { if (e.target === e.currentTarget) setShowImageViewer(false); }}
-                  onTouchStart={(e) => { if (e.target === e.currentTarget) setShowImageViewer(false); }}
+                  onClick={(e) => {
+                    if (e.target === e.currentTarget) setShowImageViewer(false);
+                  }}
                 >
-                  <button type="button" className="pd-image-viewer-close" onClick={() => setShowImageViewer(false)} aria-label="Close image viewer">✕</button>
-                  <div className="pd-image-viewer-content">
+                  <button
+                    type="button"
+                    className="pd-image-viewer-close"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowImageViewer(false);
+                    }}
+                    aria-label="Close image viewer"
+                  >
+                    <span aria-hidden="true">✕</span>
+                  </button>
+                  <div className="pd-image-viewer-content" onClick={(e) => e.stopPropagation()}>
                     <img src={p.image_url} alt={p.description || 'Product'} />
                     <div className="pd-image-viewer-caption">Tap outside or press Esc to close</div>
                   </div>
-                </div>
+                </div>,
+                document.body
               )}
             </main>
           </div>
