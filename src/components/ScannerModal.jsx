@@ -1,10 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-
-const CAMERA_FORMATS = [
-  'qr_code', 'ean_13', 'ean_8', 'upc_a', 'upc_e',
-  'code_128', 'code_39', 'code_93', 'codabar', 'itf',
-  'data_matrix', 'aztec', 'pdf417'
-];
+import { BrowserMultiFormatReader } from '@zxing/browser';
 
 function isMobileDevice() {
   return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '');
@@ -16,11 +11,11 @@ function normalize(value) {
 
 export default function ScannerModal({ onClose, onScan, products }) {
   const videoRef = useRef(null);
-  const streamRef = useRef(null);
-  const rafRef = useRef(null);
+  const controlsRef = useRef(null);
   const inputRef = useRef(null);
   const lastScannedRef = useRef('');
   const scanLockRef = useRef(false);
+  const mountedRef = useRef(true);
 
   const [mode, setMode] = useState(isMobileDevice() ? 'camera' : 'reader');
   const [readerValue, setReaderValue] = useState('');
@@ -29,10 +24,10 @@ export default function ScannerModal({ onClose, onScan, products }) {
   const [error, setError] = useState('');
   const [notFound, setNotFound] = useState('');
 
-  // Lock the page behind the scanner and preserve its exact scroll position.
-  // This is intentionally stronger than overflow:hidden alone because iOS
-  // Safari can otherwise continue scrolling the document during a fixed modal.
+  // Lock the page behind the scanner without allowing the background catalogue
+  // to participate in touch scrolling while the scanner is open.
   useEffect(() => {
+    mountedRef.current = true;
     const body = document.body;
     const html = document.documentElement;
     const scrollY = window.scrollY || window.pageYOffset || 0;
@@ -56,6 +51,7 @@ export default function ScannerModal({ onClose, onScan, products }) {
     body.classList.add('scanner-open');
 
     return () => {
+      mountedRef.current = false;
       body.classList.remove('scanner-open');
       body.style.overflow = previous.bodyOverflow;
       body.style.position = previous.bodyPosition;
@@ -69,23 +65,25 @@ export default function ScannerModal({ onClose, onScan, products }) {
   }, []);
 
   const stopCamera = () => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    rafRef.current = null;
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
+    try {
+      controlsRef.current?.stop?.();
+    } catch (_) {}
+    controlsRef.current = null;
+
+    const video = videoRef.current;
+    if (video?.srcObject) {
+      video.srcObject.getTracks?.().forEach(track => track.stop());
+      video.srcObject = null;
     }
-    if (videoRef.current) videoRef.current.srcObject = null;
     setCameraState('idle');
   };
 
   useEffect(() => () => stopCamera(), []);
 
   useEffect(() => {
-    if (mode === 'reader') {
-      const timer = setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 50);
-      return () => clearTimeout(timer);
-    }
+    if (mode !== 'reader') return undefined;
+    const timer = setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 80);
+    return () => clearTimeout(timer);
   }, [mode]);
 
   const findProduct = (raw) => {
@@ -93,12 +91,14 @@ export default function ScannerModal({ onClose, onScan, products }) {
     if (!value) return null;
     const normalized = normalize(value);
 
-    const exact = products.find(p => [p.ean, p.article_no, p.model, p.hsn, p.id]
-      .filter(v => v !== null && v !== undefined && String(v).trim() !== '')
-      .some(v => normalize(v) === normalized));
+    const exact = products.find(p =>
+      [p.ean, p.article_no, p.model, p.hsn, p.id]
+        .filter(v => v !== null && v !== undefined && String(v).trim() !== '')
+        .some(v => normalize(v) === normalized)
+    );
     if (exact) return exact;
 
-    // QR payloads can contain URLs/text. Try numeric tokens as EAN candidates.
+    // QR payloads may contain a URL or text. Try 8–14 digit numeric candidates.
     const digits = value.match(/\d{8,14}/g) || [];
     for (const token of digits) {
       const hit = products.find(p => String(p.ean || '').replace(/\D/g, '') === token);
@@ -119,113 +119,98 @@ export default function ScannerModal({ onClose, onScan, products }) {
       return true;
     }
 
-    // Explicit modal popup for an unknown EAN/QR/barcode.
+    // Unknown code: show the exact scanned value and temporarily stop decoding
+    // so the same barcode does not repeatedly trigger the popup.
+    stopCamera();
     setNotFound(raw);
     setStatus('');
     return false;
   };
 
   const startCamera = async () => {
+    if (!mountedRef.current || mode !== 'camera') return;
+    stopCamera();
     setError('');
     setStatus('');
     setNotFound('');
+    setCameraState('starting');
 
     if (!navigator.mediaDevices?.getUserMedia) {
-      setError('Camera access is not available in this browser. Please use Chrome/Edge/Safari or an external barcode reader.');
+      setCameraState('blocked');
+      setError('Camera access is not available in this browser. Check the site camera permission or use External Reader.');
       return;
     }
 
-    if (!('BarcodeDetector' in window)) {
-      setError('This browser does not provide native barcode scanning. Use Chrome or Edge on Android, or switch to External Reader on desktop.');
-      return;
-    }
-
-    // Check the browser's real permission state before requesting the camera.
-    // If permission is already granted, opening the scanner again must start
-    // the camera without showing another permission prompt. If it is denied,
-    // do not repeatedly trigger a prompt; let the user change the site setting.
+    // Do not repeatedly prompt when the browser already knows the site is denied.
     try {
       if (navigator.permissions?.query) {
         const permission = await navigator.permissions.query({ name: 'camera' });
         if (permission.state === 'denied') {
           setCameraState('blocked');
-          setError('Camera access is blocked for this site. Allow Camera in your browser site permissions, then reopen the scanner.');
+          setError('Camera access is blocked for this site. Allow Camera in browser/site settings, then tap Retry camera.');
           return;
         }
       }
     } catch (_) {
-      // Some browsers do not expose camera permission through Permissions API.
-      // Fall through to getUserMedia, which is the authoritative check.
+      // iOS Safari/Brave may not expose camera permission via Permissions API.
+      // ZXing's getUserMedia call below remains the authoritative check.
     }
 
     try {
-      let formats = CAMERA_FORMATS;
-      if (typeof window.BarcodeDetector.getSupportedFormats === 'function') {
-        const supported = await window.BarcodeDetector.getSupportedFormats();
-        formats = CAMERA_FORMATS.filter(f => supported.includes(f));
-      }
-      if (!formats.length) throw new Error('No supported barcode formats');
-
-      const detector = new window.BarcodeDetector({ formats });
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: 'environment' },
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
+      const reader = new BrowserMultiFormatReader();
+      const controls = await reader.decodeFromConstraints(
+        {
+          audio: false,
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
         },
-        audio: false,
-      });
+        videoRef.current,
+        (result, decodeError) => {
+          if (!mountedRef.current || scanLockRef.current || mode !== 'camera') return;
+          if (!result) return;
 
-      streamRef.current = stream;
-      if (!videoRef.current) {
-        stream.getTracks().forEach(track => track.stop());
+          const raw = result.getText?.() || result.text || '';
+          const value = String(raw).trim();
+          if (!value || value === lastScannedRef.current) return;
+          lastScannedRef.current = value;
+          handleValue(value);
+        }
+      );
+
+      if (!mountedRef.current || mode !== 'camera') {
+        controls?.stop?.();
         return;
       }
 
-      videoRef.current.srcObject = stream;
-      await videoRef.current.play();
+      controlsRef.current = controls;
       setCameraState('running');
       setStatus('Ready — point the rear camera at the QR code or barcode.');
-
-      const scan = async () => {
-        if (!videoRef.current || videoRef.current.readyState < 2 || !streamRef.current) return;
-        try {
-          const codes = await detector.detect(videoRef.current);
-          if (codes.length && codes[0]?.rawValue) {
-            const raw = codes[0].rawValue.trim();
-            // Avoid repeatedly popping the same unknown code while it remains in frame.
-            if (raw !== lastScannedRef.current) {
-              lastScannedRef.current = raw;
-              handleValue(raw);
-            }
-          }
-        } catch (_) {
-          // Autofocus/exposure changes can temporarily fail detection; continue.
-        }
-        if (streamRef.current) rafRef.current = requestAnimationFrame(scan);
-      };
-
-      lastScannedRef.current = '';
-      rafRef.current = requestAnimationFrame(scan);
     } catch (e) {
       stopCamera();
+      if (!mountedRef.current) return;
+
       if (e?.name === 'NotAllowedError' || e?.name === 'SecurityError') {
         setCameraState('blocked');
-        setError('Camera permission is blocked or not granted for this site. Check the browser address-bar/site permissions and allow Camera, then reopen the scanner.');
+        setError('Camera permission is blocked or not granted for this site. Allow Camera in the browser site settings, then tap Retry camera.');
       } else if (e?.name === 'NotFoundError' || e?.name === 'DevicesNotFoundError') {
         setError('No camera was found on this device. Use External Reader instead.');
       } else {
-        setError('Unable to start the rear camera. Please check the browser camera permission or use External Reader.');
+        setError('Unable to start the camera. Check the browser camera permission and try again.');
       }
     }
   };
 
-  // Auto-start camera whenever the scanner opens in camera mode or the user
-  // switches back to Camera. No Start Camera button is required.
+  // Camera starts automatically whenever Camera mode is selected.
   useEffect(() => {
-    if (mode !== 'camera') return;
-    const timer = setTimeout(() => startCamera(), 60);
-    return () => clearTimeout(timer);
+    if (mode !== 'camera') return undefined;
+    const timer = setTimeout(startCamera, 100);
+    return () => {
+      clearTimeout(timer);
+      stopCamera();
+    };
   }, [mode]);
 
   const switchMode = (nextMode) => {
@@ -247,14 +232,8 @@ export default function ScannerModal({ onClose, onScan, products }) {
   const handleReaderChange = (e) => {
     const value = e.target.value;
     setReaderValue(value);
-
-    // Most keyboard-wedge scanners finish with Enter. Some readers don't.
-    // If a complete EAN/UPC-like value arrives, resolve it immediately.
     const compact = value.replace(/\s+/g, '');
-    if (/^\d{8,14}$/.test(compact)) {
-      const product = findProduct(compact);
-      if (product) handleValue(compact);
-    }
+    if (/^\d{8,14}$/.test(compact) && findProduct(compact)) handleValue(compact);
   };
 
   const close = () => {
@@ -294,7 +273,11 @@ export default function ScannerModal({ onClose, onScan, products }) {
                   <div className="scanner-camera-placeholder">
                     <span>⌁</span>
                     <strong>{cameraState === 'blocked' ? 'Camera access blocked' : 'Starting camera…'}</strong>
-                    <small>{cameraState === 'blocked' ? 'Allow Camera for this site in the browser settings, then tap Retry.' : 'The rear camera starts automatically. Keep the code inside the frame.'}</small>
+                    <small>
+                      {cameraState === 'blocked'
+                        ? 'Allow Camera for this site in browser settings, then tap Retry.'
+                        : 'The rear camera starts automatically. Keep the code inside the frame.'}
+                    </small>
                     {cameraState === 'blocked' && (
                       <button type="button" className="scanner-retry" onClick={startCamera}>Retry camera</button>
                     )}
@@ -302,7 +285,7 @@ export default function ScannerModal({ onClose, onScan, products }) {
                 )}
                 <div className="scanner-frame" />
               </div>
-              <div className="scanner-auto-note">Camera is active automatically when permission is available.</div>
+              <div className="scanner-auto-note">Camera starts automatically when permission is available.</div>
             </div>
           ) : (
             <form className="scanner-reader-panel" onSubmit={submitReader}>
@@ -340,7 +323,7 @@ export default function ScannerModal({ onClose, onScan, products }) {
               <h3>Code not found in Article Ledger</h3>
               <p>This QR / barcode is not available in the database.</p>
               <div className="scanner-code-value">{notFound}</div>
-              <button type="button" className="btn btn-teal" onClick={() => { setNotFound(''); lastScannedRef.current = ''; if (mode === 'reader') inputRef.current?.focus({ preventScroll: true }); }}>Scan Another</button>
+              <button type="button" className="btn btn-teal" onClick={() => { setNotFound(''); lastScannedRef.current = ''; scanLockRef.current = false; if (mode === 'camera') startCamera(); else inputRef.current?.focus({ preventScroll: true }); }}>Scan Another</button>
             </div>
           </div>
         )}
