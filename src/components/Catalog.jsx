@@ -2,7 +2,8 @@ import React, { useMemo, useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { fmtINR, discountPct, formatMonthLabel, normalizeMonthValue, extractYear, yearOptions, uniqueSorted, monthOptions } from '../lib/helpers.js';
 import ProductModal from './ProductModal.jsx';
-import { ResetIcon, DownloadIcon } from './Icons.jsx';
+import { ResetIcon, DownloadIcon, ScanIcon } from './Icons.jsx';
+import ScannerModal from './ScannerModal.jsx';
 import { useHideOnScroll } from '../lib/useHideOnScroll.js';
 import CatalogueExport from './CatalogueExport.jsx';
 
@@ -15,6 +16,7 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
   const [year, setYear] = useState('');
   const [selected, setSelected] = useState(null);
   const [showCatalogueExport, setShowCatalogueExport] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
   const [autoOpenPending, setAutoOpenPending] = useState(false);
   const controlsHidden = useHideOnScroll();
 
@@ -195,6 +197,7 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
             <span className="search-glyph">⌕</span>
             <input aria-label="Search articles" placeholder="Search EAN, Article No., model, brand, category, HSN…" value={q} onFocus={() => setSearchFocused(true)} onBlur={() => setTimeout(() => setSearchFocused(false), 120)} onChange={(e) => setQ(e.target.value)} />
             {q && <button type="button" className="search-clear" onMouseDown={(e)=>e.preventDefault()} onClick={() => setQ('')} aria-label="Clear search">×</button>}
+            <button type="button" className="search-scan-btn" onMouseDown={(e)=>e.preventDefault()} onClick={() => setShowScanner(true)} aria-label="Scan QR or barcode" title="Scan QR / Barcode"><ScanIcon /></button>
             {searchFocused && q && searchSuggestions.length > 0 && (
               <div className="search-suggestions">
                 {searchSuggestions.map((s, i) => <button key={i} type="button" onMouseDown={(e)=>e.preventDefault()} onClick={() => setQ(s.value)}><span>{s.type}</span><strong>{s.value}</strong></button>)}
@@ -288,6 +291,7 @@ export default function Catalog({ products, initialFilters, onEdit, onDelete, is
       )}
 
       {showCatalogueExport && <CatalogueExport type="general" rows={filtered} onClose={() => setShowCatalogueExport(false)} />}
+      {showScanner && <ScannerModal products={products} onClose={() => setShowScanner(false)} onScan={(product) => { setShowScanner(false); setQ(String(product.ean || product.article_no || product.model || '')); setSelected(product); }} />}
     </>
   );
 }

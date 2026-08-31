@@ -18,3 +18,13 @@ export function DownloadIcon() {
     </svg>
   );
 }
+
+
+export function ScanIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M5 5h4M15 5h4M5 19h4M15 19h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+      <path d="M7 8v8M10 8v8M14 8v8M17 8v8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  );
+}

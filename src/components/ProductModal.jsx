@@ -49,7 +49,7 @@ function DataItem({ icon, label, value, tone = 'blue', className = '' }) {
   );
 }
 
-function CartonSection({ type, tone, qty, mrp, dimensions, weight }) {
+function CartonSection({ type, tone, qty, mrp, unitMrp, dimensions, weight }) {
   const isMaster = type === 'MASTER CARTON';
   return (
     <section className={`pd-carton-section pd-carton-${tone}`}>
@@ -62,13 +62,14 @@ function CartonSection({ type, tone, qty, mrp, dimensions, weight }) {
       </div>
       <div className="pd-carton-row">
         <DataItem icon="▣" tone={tone} label="QUANTITY" value={qty ?? '—'} />
-        <DataItem
-          icon="₹"
-          tone={tone}
-          label={isMaster ? 'MASTER CARTON MRP' : 'INNER CARTON MRP'}
-          value={mrp}
-          className="pd-carton-mrp"
-        />
+        <div className="pd-data-item pd-carton-mrp">
+          <Icon tone={tone}>₹</Icon>
+          <div className="pd-data-copy">
+            <small>{isMaster ? 'MASTER CARTON MRP' : 'INNER CARTON MRP'}</small>
+            <strong title={mrp}>{mrp}</strong>
+            {qty != null && unitMrp != null && <span className="pd-carton-formula">{qty} × {fmtINR(unitMrp)}</span>}
+          </div>
+        </div>
         <DataItem icon="⌗" tone={tone} label="DIMENSIONS (L × W × H)" value={dimensions} />
         <DataItem icon="◉" tone={tone} label="NET / GROSS WEIGHT" value={weight} className="pd-weight-item" />
       </div>
@@ -165,13 +166,13 @@ export default function ProductModal({ product: p, isAuthed, onClose, onEdit, on
                   </div>
                   <CartonSection
                     type="MASTER CARTON" tone="teal"
-                    qty={p.master_qty} mrp={masterMrp}
+                    qty={p.master_qty} mrp={masterMrp} unitMrp={p.mrp}
                     dimensions={dims(p.master_l, p.master_w, p.master_h, p.master_dim_unit)}
                     weight={wt(p.master_nw, p.master_gw, p.master_wt_unit)}
                   />
                   <CartonSection
                     type="INNER CARTON" tone="purple"
-                    qty={p.inner_qty} mrp={innerMrp}
+                    qty={p.inner_qty} mrp={innerMrp} unitMrp={p.mrp}
                     dimensions={dims(p.inner_l, p.inner_w, p.inner_h, p.inner_dim_unit)}
                     weight={wt(p.inner_nw, p.inner_gw, p.inner_wt_unit)}
                   />
