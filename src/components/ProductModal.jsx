@@ -83,6 +83,7 @@ export default function ProductModal({ product: p, isAuthed, onClose, onEdit, on
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [showImageViewer, setShowImageViewer] = useState(false);
 
   // Lock the catalogue while the modal is open without disabling touch scrolling
   // on the modal itself. Android works best with overflow locking only; iOS
@@ -131,6 +132,15 @@ export default function ProductModal({ product: p, isAuthed, onClose, onEdit, on
   }, []);
 
   useEffect(() => {
+    if (!showImageViewer) return;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setShowImageViewer(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [showImageViewer]);
+
+  useEffect(() => {
     if (!isAuthed || !p?.id) { setHistory([]); return; }
     let cancelled = false;
     setHistoryLoading(true);
@@ -160,7 +170,9 @@ export default function ProductModal({ product: p, isAuthed, onClose, onEdit, on
             <aside className="pd-sidebar">
               <div className="pd-image-card">
                 {p.image_url
-                  ? <img src={p.image_url} alt={p.description || 'Product'} />
+                  ? <button type="button" className="pd-image-button" onClick={() => setShowImageViewer(true)} aria-label="View product image larger">
+                      <img src={p.image_url} alt={p.description || 'Product'} />
+                    </button>
                   : <div className="image-placeholder-large"><span>NO IMAGE</span><small>Upload an image from Edit</small></div>}
               </div>
 
@@ -256,6 +268,23 @@ export default function ProductModal({ product: p, isAuthed, onClose, onEdit, on
                         </div>
                       </div>
                     ))}</div>}
+                </div>
+              )}
+
+              {showImageViewer && p.image_url && (
+                <div
+                  className="pd-image-viewer"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Product image viewer"
+                  onMouseDown={(e) => { if (e.target === e.currentTarget) setShowImageViewer(false); }}
+                  onTouchStart={(e) => { if (e.target === e.currentTarget) setShowImageViewer(false); }}
+                >
+                  <button type="button" className="pd-image-viewer-close" onClick={() => setShowImageViewer(false)} aria-label="Close image viewer">✕</button>
+                  <div className="pd-image-viewer-content">
+                    <img src={p.image_url} alt={p.description || 'Product'} />
+                    <div className="pd-image-viewer-caption">Tap outside or press Esc to close</div>
+                  </div>
                 </div>
               )}
             </main>
