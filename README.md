@@ -116,3 +116,4 @@ To set it up:
 3. Redeploy (or just refresh, if you're already deployed) — the Garments tab will now show real data.
 
 Each card in the Garments tab represents one style + color combination; click it to see the full size run (every size, its set-packing quantity, EAN, and article number) in one table.
+"# article-ledger-employee-guest" 
