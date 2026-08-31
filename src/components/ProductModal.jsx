@@ -84,6 +84,52 @@ export default function ProductModal({ product: p, isAuthed, onClose, onEdit, on
   const [historyError, setHistoryError] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
 
+  // Lock the catalogue while the modal is open without disabling touch scrolling
+  // on the modal itself. Android works best with overflow locking only; iOS
+  // additionally gets the fixed-body technique to prevent Safari background drift.
+  useEffect(() => {
+    const body = document.body;
+    const html = document.documentElement;
+    const scrollY = window.scrollY || window.pageYOffset || 0;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+    const previous = {
+      bodyOverflow: body.style.overflow,
+      bodyPosition: body.style.position,
+      bodyTop: body.style.top,
+      bodyWidth: body.style.width,
+      bodyTouchAction: body.style.touchAction,
+      htmlOverflow: html.style.overflow,
+      htmlOverscroll: html.style.overscrollBehavior,
+    };
+
+    html.style.overflow = 'hidden';
+    html.style.overscrollBehavior = 'none';
+    body.style.overflow = 'hidden';
+    body.style.touchAction = 'auto';
+
+    if (isIOS) {
+      body.style.position = 'fixed';
+      body.style.top = `-${scrollY}px`;
+      body.style.width = '100%';
+    }
+
+    body.classList.add('product-modal-open');
+
+    return () => {
+      body.classList.remove('product-modal-open');
+      body.style.overflow = previous.bodyOverflow;
+      body.style.position = previous.bodyPosition;
+      body.style.top = previous.bodyTop;
+      body.style.width = previous.bodyWidth;
+      body.style.touchAction = previous.bodyTouchAction;
+      html.style.overflow = previous.htmlOverflow;
+      html.style.overscrollBehavior = previous.htmlOverscroll;
+      if (isIOS) window.scrollTo(0, scrollY);
+    };
+  }, []);
+
   useEffect(() => {
     if (!isAuthed || !p?.id) { setHistory([]); return; }
     let cancelled = false;

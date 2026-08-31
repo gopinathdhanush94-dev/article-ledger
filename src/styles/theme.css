@@ -1277,3 +1277,186 @@ header{background:rgba(255,255,255,.68);backdrop-filter:blur(18px);-webkit-backd
   .scanner-status,.scanner-error{margin:0 12px 12px}
   .scanner-footer{padding-bottom:calc(11px + env(safe-area-inset-bottom))}
 }
+
+/* =========================================================
+   FINAL MOBILE MODAL / IOS SCROLL ISOLATION FIX
+   ========================================================= */
+html.product-modal-open,
+html.scanner-open,
+body.product-modal-open,
+body.scanner-open{
+  overflow:hidden !important;
+  overscroll-behavior:none !important;
+}
+
+/* The backdrop is a real surface, not a transparent window into the catalogue. */
+.product-overlay{
+  position:fixed !important;
+  inset:0 !important;
+  z-index:100000 !important;
+  background:rgba(15,23,42,.68) !important;
+  backdrop-filter:blur(14px) saturate(115%) !important;
+  -webkit-backdrop-filter:blur(14px) saturate(115%) !important;
+  overflow:hidden !important;
+  overscroll-behavior:none !important;
+  touch-action:auto !important;
+}
+
+.product-overlay .pd-shell{
+  position:relative;
+  z-index:1;
+  isolation:isolate;
+}
+
+.product-overlay .pd-modal{
+  position:relative;
+  isolation:isolate;
+  background:linear-gradient(145deg,rgba(238,242,247,.985),rgba(222,228,235,.975)) !important;
+  -webkit-backdrop-filter:blur(22px) saturate(125%) !important;
+  backdrop-filter:blur(22px) saturate(125%) !important;
+  overflow:hidden !important;
+}
+
+.product-overlay .pd-layout{
+  min-height:0 !important;
+  overscroll-behavior:contain !important;
+  -webkit-overflow-scrolling:touch !important;
+}
+
+.product-overlay .pd-main{
+  min-height:0 !important;
+}
+
+/* Desktop stays viewport-fit; only the modal can ever receive scroll. */
+@media(min-width:761px){
+  .product-overlay .pd-layout{overflow:hidden !important;}
+  .product-overlay .pd-content{overflow:hidden !important;}
+}
+
+/* Mobile: one and only one scroll container inside the product modal. */
+@media(max-width:760px){
+  /* Android Chrome can visibly repaint backdrop-filter while the finger scrolls.
+     Keep the glass look through translucency/borders, but remove live blur from
+     the mobile product modal so the catalogue underneath cannot flicker through. */
+  .product-overlay{
+    padding:12px !important;
+    align-items:stretch !important;
+    justify-content:center !important;
+    background:rgba(15,23,42,.82) !important;
+    backdrop-filter:none !important;
+    -webkit-backdrop-filter:none !important;
+    touch-action:auto !important;
+  }
+
+  .product-overlay .pd-shell{
+    width:100% !important;
+    height:calc(100dvh - 24px) !important;
+    max-height:none !important;
+  }
+
+  .product-overlay .pd-modal{
+    width:100% !important;
+    height:100% !important;
+    max-height:none !important;
+    border-radius:22px !important;
+    overflow:hidden !important;
+    touch-action:pan-y !important;
+    backdrop-filter:none !important;
+    -webkit-backdrop-filter:none !important;
+  }
+
+  .product-overlay .pd-layout{
+    display:block !important;
+    height:100% !important;
+    min-height:0 !important;
+    max-height:100% !important;
+    overflow-y:scroll !important;
+    overflow-x:hidden !important;
+    overscroll-behavior:contain !important;
+    -webkit-overflow-scrolling:touch !important;
+    touch-action:pan-y !important;
+    scrollbar-width:none !important;
+    contain:layout paint !important;
+  }
+
+  .product-overlay .pd-layout::-webkit-scrollbar{
+    display:none !important;
+    width:0 !important;
+  }
+
+  .product-overlay .pd-sidebar{
+    border-bottom:1px solid rgba(148,163,184,.16) !important;
+  }
+
+  .product-overlay .pd-main{
+    overflow:visible !important;
+    min-height:auto !important;
+  }
+
+  .product-overlay .pd-content{
+    overflow:visible !important;
+    min-height:auto !important;
+  }
+
+  .product-overlay .pd-actions{
+    padding-bottom:calc(12px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .product-overlay .pd-close{
+    position:absolute !important;
+    z-index:100 !important;
+    top:12px !important;
+    right:12px !important;
+  }
+}
+
+/* =========================================================
+   SCANNER — SAME HARD SCROLL ISOLATION
+   ========================================================= */
+.scanner-overlay{
+  position:fixed !important;
+  inset:0 !important;
+  z-index:110000 !important;
+  background:rgba(15,23,42,.72) !important;
+  overflow:hidden !important;
+  overscroll-behavior:none !important;
+  touch-action:none !important;
+}
+
+.scanner-overlay .scanner-modal{
+  position:relative;
+  isolation:isolate;
+  overscroll-behavior:contain !important;
+  touch-action:pan-y !important;
+}
+
+.scanner-overlay .scanner-scroll-area{
+  min-height:0 !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  overscroll-behavior:contain !important;
+  -webkit-overflow-scrolling:touch !important;
+  touch-action:pan-y !important;
+}
+
+.scanner-overlay .scanner-not-found-backdrop{
+  position:absolute !important;
+  inset:0 !important;
+  z-index:50 !important;
+  background:rgba(15,23,42,.80) !important;
+  overscroll-behavior:none !important;
+  touch-action:none !important;
+}
+
+@media(max-width:640px){
+  .scanner-overlay{
+    padding:0 !important;
+    background:rgba(15,23,42,.78) !important;
+  }
+  .scanner-overlay .scanner-modal{
+    width:100% !important;
+    height:100dvh !important;
+    max-height:none !important;
+    border-radius:0 !important;
+  }
+}
