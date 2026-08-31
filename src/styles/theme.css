@@ -1460,3 +1460,44 @@ body.scanner-open{
     border-radius:0 !important;
   }
 }
+
+/* =========================================================
+   ANDROID SCROLL STABILITY
+   Keep the catalogue header/search controls in normal flow on Android.
+   Chromium can repaint nested sticky + translucent/backdrop-filter surfaces
+   during finger scrolling, which produces the visible top-bar flicker.
+   ========================================================= */
+html.android-device header,
+html.android-device .controls {
+  position: static !important;
+  top: auto !important;
+  transform: none !important;
+  transition: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: rgba(248,250,252,.98) !important;
+  will-change: auto !important;
+}
+
+html.android-device .controls {
+  max-height: none !important;
+  overflow: visible !important;
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
+}
+
+html.android-device .controls.controls-hidden {
+  max-height: none !important;
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
+  border-bottom-color: var(--border) !important;
+}
+
+@media (max-width:640px) {
+  html.android-device header {
+    z-index: auto !important;
+  }
+  html.android-device .controls {
+    z-index: auto !important;
+  }
+}

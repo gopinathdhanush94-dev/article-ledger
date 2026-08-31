@@ -1,15 +1,23 @@
 import { useEffect, useState } from 'react';
 
 /**
- * On mobile, signals that the element this hook is paired with should hide
- * as soon as the user scrolls down (freeing up screen space), and come back
- * immediately on the very first upward scroll — not just once you reach the
- * top again. Desktop (width > 640px) is untouched.
+ * Mobile controls auto-hide on iOS/other mobile browsers.
+ * Android deliberately keeps the header/search controls in normal document flow
+ * to avoid Chromium sticky/compositor repaint flicker while scrolling.
  */
 export function useHideOnScroll() {
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
+    const ua = navigator.userAgent || '';
+    const isAndroid = /Android/i.test(ua);
+
+    if (isAndroid) {
+      document.documentElement.classList.add('android-device');
+      setHidden(false);
+      return () => document.documentElement.classList.remove('android-device');
+    }
+
     let lastY = window.scrollY;
     function onScroll() {
       if (window.innerWidth > 640) { setHidden(false); return; }
